@@ -32,19 +32,30 @@ def fetch_movie_details(movie_id):
     if response.status_code == 200:
         data = response.json()
         if data.get('Response') == 'True':
+            # Get top 5 cast members
+            cast = [actor.strip() for actor in data['Actors'].split(',')[:5]]
+            # Get director and writer
+            crew = []
+            if data.get('Director'):
+                crew.extend([f"{name.strip()} (Director)" for name in data['Director'].split(',')])
+            if data.get('Writer'):
+                crew.extend([f"{name.strip()} (Writer)" for name in data['Writer'].split(',')[:2]])
+
             return {
                 'id': data['imdbID'],
                 'title': data['Title'],
                 'year': int(data['Year']) if data['Year'].isdigit() else data['Year'],
+                'released': data['Released'],
                 'runtime': int(data['Runtime'].split()[0]) if data['Runtime'].split()[0].isdigit() else 0,
                 'rating': data['Rated'],
-                'cast': [{'name': actor.strip(), 'role': 'Actor'} for actor in data['Actors'].split(',')],
-                'release_dates': {'US': data['Released']}
+                'genre': data['Genre'].split(', '),
+                'cast': cast,
+                'crew': crew
             }
     return None
 
-def search_omdb(query):
-    """Search movies using OMDB API."""
+def search_movies(query):
+    """Search movies by title."""
     response = requests.get(
         OMDB_API_URL,
         params={
@@ -56,53 +67,80 @@ def search_omdb(query):
     if response.status_code == 200:
         data = response.json()
         if data.get('Response') == 'True':
-            return [
-                {
-                    'id': movie['imdbID'],
-                    'title': movie['Title'],
-                    'year': int(movie['Year']) if movie['Year'].isdigit() else movie['Year'],
-                    'rating': fetch_movie_details(movie['imdbID'])['rating']
-                }
-                for movie in data['Search'][:5]  # Limit to 5 results
-            ]
+            results = []
+            for movie in data['Search'][:5]:  # Limit to 5 results
+                details = fetch_movie_details(movie['imdbID'])
+                if details:
+                    results.append(details)
+            return results
     return []
 
-@app.route('/api/v1/movies/<movie_id>', methods=['GET'])
-def get_movie_details(movie_id):
-    """Get details for a specific movie by ID."""
-    movie = fetch_movie_details(movie_id)
-    if movie:
-        return jsonify(movie)
-    return jsonify({
-        "error": {
-            "code": "NOT_FOUND",
-            "message": f"Movie with ID {movie_id} not found",
-            "details": "Please verify the movie ID and try again",
-            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ")
+def search_actor(name):
+    """Search for an actor's filmography."""
+    response = requests.get(
+        OMDB_API_URL,
+        params={
+            'apikey': OMDB_API_KEY,
+            's': name,
+            'type': 'movie'
         }
-    }), 404
+    )
+    if response.status_code == 200:
+        data = response.json()
+        if data.get('Response') == 'True':
+            filmography = []
+            for movie in data['Search'][:10]:  # Limit to 10 movies
+                details = fetch_movie_details(movie['imdbID'])
+                if details and any(name.lower() in cast.lower() for cast in details['cast']):
+                    filmography.append({
+                        'title': details['title'],
+                        'year': details['year'],
+                        'role': 'Actor',
+                        'id': details['id']
+                    })
+            return filmography
+    return []
 
 @app.route('/api/v1/movies/search', methods=['GET'])
-def search_movies():
-    """Search for movies by title."""
-    query = request.args.get('title', '').strip()
+def search_endpoint():
+    """Search for movies by title or actor name."""
+    query = request.args.get('q', '').strip()
+    search_type = request.args.get('type', 'movie').strip().lower()
+
     if not query:
         return jsonify({
             "error": {
                 "code": "BAD_REQUEST",
                 "message": "Search query is required",
-                "details": "Please provide a title parameter",
+                "details": "Please provide a search term",
                 "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ")
             }
         }), 400
     
-    results = search_omdb(query)
-    return jsonify(results)
+    if search_type == 'actor':
+        results = search_actor(query)
+        if results:
+            return jsonify({
+                "actor": query,
+                "filmography": results
+            })
+    else:
+        results = search_movies(query)
+        if results:
+            return jsonify(results)
+
+    return jsonify({
+        "error": {
+            "code": "NOT_FOUND",
+            "message": f"No results found for {query}",
+            "details": "Try a different search term",
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ")
+        }
+    }), 404
 
 @app.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint."""
-    # Test OMDB API connection
     try:
         response = requests.get(
             OMDB_API_URL,

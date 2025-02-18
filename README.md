@@ -24,162 +24,128 @@ A microservice that provides movie information through a REST API, powered by th
    # Install dependencies
    pip install -r requirements.txt
 
-   # Start the service (in one terminal)
+   # Start the service
    python service.py
-
-   # Start the CLI (in another terminal)
-   python cli.py
    ```
 
-The CLI provides these commands:
-- `details <movie_id>` - Get details for a specific movie
-- `search <title>` - Search for any movie by title
-- `health` - Check if the service is running
-- `help` - Show available commands
-- `quit` or `exit` - Exit the CLI
+## Search Movies and Actors
 
-Example usage:
-```bash
-movies> search Inception
-Search Results:
+The service provides two types of searches:
 
-ID: tt1375666
-Title: Inception
-Year: 2010
-Rating: PG-13
-
-movies> details tt1375666
-Movie Details:
-Title: Inception
-Year: 2010
-Runtime: 148 minutes
-Rating: PG-13
-
-Cast:
-- Leonardo DiCaprio as Cobb
-- Joseph Gordon-Levitt as Arthur
-- Ellen Page as Ariadne
-
-Release Dates:
-- US: 2010-07-16
-```
-
-## How to Request Data
-
-The service accepts HTTP GET requests. Here are the available endpoints:
-
-### 1. Get Movie Details
+### 1. Movie Search
 ```python
 import requests
 
-# Get details for any movie using its IMDb ID
-response = requests.get(
-    "http://localhost:5000/api/v1/movies/tt1375666",  # Inception
-    headers={"Accept": "application/json"}
-)
-
-if response.status_code == 200:
-    movie = response.json()
-    print(f"Title: {movie['title']}")
-    print(f"Year: {movie['year']}")
-    print(f"Rating: {movie['rating']}")
-```
-
-### 2. Search Movies
-```python
 # Search for any movie by title
 response = requests.get(
     "http://localhost:5000/api/v1/movies/search",
-    params={"title": "Matrix"},  # Search any movie
+    params={"q": "Inception"},
     headers={"Accept": "application/json"}
 )
 
 if response.status_code == 200:
     movies = response.json()
     for movie in movies:
-        print(f"Found: {movie['title']} ({movie['year']})")
+        print(f"\nTitle: {movie['title']} ({movie['year']})")
+        print(f"Rating: {movie['rating']}")
+        print(f"Genre: {', '.join(movie['genre'])}")
+        print(f"Released: {movie['released']}")
+        print("\nCast:")
+        for actor in movie['cast']:
+            print(f"- {actor}")
+        print("\nCrew:")
+        for crew_member in movie['crew']:
+            print(f"- {crew_member}")
 ```
 
-## How to Receive Data
+Example Response:
+```json
+[
+    {
+        "id": "tt1375666",
+        "title": "Inception",
+        "year": 2010,
+        "released": "16 Jul 2010",
+        "runtime": 148,
+        "rating": "PG-13",
+        "genre": ["Action", "Adventure", "Sci-Fi"],
+        "cast": [
+            "Leonardo DiCaprio",
+            "Joseph Gordon-Levitt",
+            "Ellen Page",
+            "Tom Hardy",
+            "Ken Watanabe"
+        ],
+        "crew": [
+            "Christopher Nolan (Director)",
+            "Christopher Nolan (Writer)"
+        ]
+    }
+]
+```
 
-The service returns JSON-formatted responses:
+### 2. Actor Search
+```python
+# Search for an actor's filmography
+response = requests.get(
+    "http://localhost:5000/api/v1/movies/search",
+    params={"q": "Tom Hanks", "type": "actor"},
+    headers={"Accept": "application/json"}
+)
 
-### 1. Successful Response
+if response.status_code == 200:
+    data = response.json()
+    print(f"\nFilmography for {data['actor']}:")
+    for movie in data['filmography']:
+        print(f"- {movie['title']} ({movie['year']})")
+```
+
+Example Response:
 ```json
 {
-    "id": "tt1375666",
-    "title": "Inception",
-    "year": 2010,
-    "runtime": 148,
-    "rating": "PG-13",
-    "cast": [
+    "actor": "Tom Hanks",
+    "filmography": [
         {
-            "name": "Leonardo DiCaprio",
-            "role": "Cobb"
+            "title": "Forrest Gump",
+            "year": 1994,
+            "role": "Actor",
+            "id": "tt0109830"
+        },
+        {
+            "title": "Saving Private Ryan",
+            "year": 1998,
+            "role": "Actor",
+            "id": "tt0120815"
         }
-    ],
-    "release_dates": {
-        "US": "2010-07-16"
-    }
+    ]
 }
 ```
 
-### 2. Error Response
+## Error Responses
+
+### 1. No Results Found
 ```json
 {
     "error": {
         "code": "NOT_FOUND",
-        "message": "Movie with ID tt9999999 not found",
-        "details": "Please verify the movie ID and try again",
+        "message": "No results found for Matrix 5",
+        "details": "Try a different search term",
         "timestamp": "2025-02-04T19:31:29Z"
     }
 }
 ```
 
-## UML Sequence Diagram
-
+### 2. Missing Search Term
+```json
+{
+    "error": {
+        "code": "BAD_REQUEST",
+        "message": "Search query is required",
+        "details": "Please provide a search term",
+        "timestamp": "2025-02-04T19:31:29Z"
+    }
+}
 ```
-Dashboard CLI                movies.txt               Movie Info Service                OMDB API
-     |                          |                            |                            |
-     |  Write movie search     |                            |                            |
-     |------------------------>|                            |                            |
-     |                         |                            |                            |
-     |                         |     Read search query      |                            |
-     |                         |<---------------------------|                            |
-     |                         |                            |                            |
-     |                         |                            |    Request movie data      |
-     |                         |                            |--------------------------->|
-     |                         |                            |                            |
-     |                         |                            |    Return movie data       |
-     |                         |                            |<---------------------------|
-     |                         |                            |                            |
-     |                         |  Write movie data response |                            |
-     |                         |<---------------------------|                            |
-     |                         |                            |                            |
-     |   Read response        |                            |                            |
-     |<------------------------|                            |                            |
-     |                         |                            |                            |
-```
-
-## Error Handling
-
-1. Movie Not Found (404)
-   ```python
-   try:
-       response = requests.get("http://localhost:5000/api/v1/movies/tt9999999")
-       data = response.json()
-   except requests.exceptions.RequestException as e:
-       print(f"Error: {e}")
-   ```
-
-2. Invalid Request (400)
-   ```python
-   try:
-       response = requests.get("http://localhost:5000/api/v1/movies/search")
-       data = response.json()
-   except requests.exceptions.RequestException as e:
-       print(f"Error: {e}")
-   ```
 
 ## Health Check
 

@@ -179,9 +179,9 @@ if response.status_code == 200:
 If you encounter any issues:
 1. Check the service is running (`python service.py`)
 2. Verify your Python version (3.13.1 recommended)
-3. Contact me:
-   - Available: 9 AM - 5 PM PST weekdays
-   - Response time: Within 2 hours
+3. Contact me via Teams:
+   - Available: 7 PM - 11 PM PST weekdays
+   - Response time: Within 24-48 hours
 
 ## Rate Limits
 - 100 requests per minute

@@ -1,70 +1,78 @@
 import os
 import json
 import time
+import requests
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
-# Load movie data from JSON file
-def load_movies():
-    with open('data/movies.json', 'r') as f:
-        return json.load(f)
+# Get OMDB API key from environment
+OMDB_API_KEY = os.getenv('OMDB_API_KEY')
+if not OMDB_API_KEY:
+    raise ValueError("OMDB_API_KEY not found in .env file")
 
-# Initialize movies data
-if not os.path.exists('data'):
-    os.makedirs('data')
+OMDB_API_URL = "http://www.omdbapi.com/"
 
-if not os.path.exists('data/movies.json'):
-    # Create sample movie data
-    sample_movies = {
-        "movies": [
-            {
-                "id": "tt0468569",
-                "title": "The Dark Knight",
-                "year": 2008,
-                "runtime": 152,
-                "rating": "PG-13",
-                "cast": [
-                    {
-                        "name": "Christian Bale",
-                        "role": "Bruce Wayne / Batman"
-                    }
-                ],
-                "release_dates": {
-                    "US": "2008-07-18"
-                }
-            },
-            {
-                "id": "tt0372784",
-                "title": "Batman Begins",
-                "year": 2005,
-                "runtime": 140,
-                "rating": "PG-13",
-                "cast": [
-                    {
-                        "name": "Christian Bale",
-                        "role": "Bruce Wayne / Batman"
-                    }
-                ],
-                "release_dates": {
-                    "US": "2005-06-15"
-                }
+def fetch_movie_details(movie_id):
+    """Fetch movie details from OMDB API."""
+    response = requests.get(
+        OMDB_API_URL,
+        params={
+            'apikey': OMDB_API_KEY,
+            'i': movie_id,
+            'plot': 'full'
+        }
+    )
+    if response.status_code == 200:
+        data = response.json()
+        if data.get('Response') == 'True':
+            return {
+                'id': data['imdbID'],
+                'title': data['Title'],
+                'year': int(data['Year']) if data['Year'].isdigit() else data['Year'],
+                'runtime': int(data['Runtime'].split()[0]) if data['Runtime'].split()[0].isdigit() else 0,
+                'rating': data['Rated'],
+                'cast': [{'name': actor.strip(), 'role': 'Actor'} for actor in data['Actors'].split(',')],
+                'release_dates': {'US': data['Released']}
             }
-        ]
-    }
-    with open('data/movies.json', 'w') as f:
-        json.dump(sample_movies, f, indent=2)
+    return None
 
-movies = load_movies()
+def search_omdb(query):
+    """Search movies using OMDB API."""
+    response = requests.get(
+        OMDB_API_URL,
+        params={
+            'apikey': OMDB_API_KEY,
+            's': query,
+            'type': 'movie'
+        }
+    )
+    if response.status_code == 200:
+        data = response.json()
+        if data.get('Response') == 'True':
+            return [
+                {
+                    'id': movie['imdbID'],
+                    'title': movie['Title'],
+                    'year': int(movie['Year']) if movie['Year'].isdigit() else movie['Year'],
+                    'rating': fetch_movie_details(movie['imdbID'])['rating']
+                }
+                for movie in data['Search'][:5]  # Limit to 5 results
+            ]
+    return []
 
 @app.route('/api/v1/movies/<movie_id>', methods=['GET'])
 def get_movie_details(movie_id):
     """Get details for a specific movie by ID."""
-    for movie in movies['movies']:
-        if movie['id'] == movie_id:
-            return jsonify(movie)
+    movie = fetch_movie_details(movie_id)
+    if movie:
+        return jsonify(movie)
     return jsonify({
         "error": {
             "code": "NOT_FOUND",
@@ -77,7 +85,7 @@ def get_movie_details(movie_id):
 @app.route('/api/v1/movies/search', methods=['GET'])
 def search_movies():
     """Search for movies by title."""
-    query = request.args.get('title', '').lower()
+    query = request.args.get('title', '').strip()
     if not query:
         return jsonify({
             "error": {
@@ -88,16 +96,29 @@ def search_movies():
             }
         }), 400
     
-    results = [
-        movie for movie in movies['movies']
-        if query in movie['title'].lower()
-    ]
+    results = search_omdb(query)
     return jsonify(results)
 
 @app.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint."""
-    return jsonify({"status": "healthy"})
+    # Test OMDB API connection
+    try:
+        response = requests.get(
+            OMDB_API_URL,
+            params={
+                'apikey': OMDB_API_KEY,
+                'i': 'tt0468569'  # The Dark Knight as test
+            }
+        )
+        omdb_status = "healthy" if response.status_code == 200 else "unhealthy"
+    except Exception:
+        omdb_status = "unhealthy"
+
+    return jsonify({
+        "status": "healthy",
+        "omdb_api": omdb_status
+    })
 
 if __name__ == '__main__':
     app.run(port=5000)

@@ -6,14 +6,14 @@ A microservice that provides movie information through a REST API, powered by th
 
 1. Get OMDB API Key:
    - Visit http://www.omdbapi.com/ to get a free API key
-   - Set the environment variable:
-     ```bash
-     # Windows (PowerShell)
-     $env:OMDB_API_KEY='your_key'
-     
-     # Linux/macOS
-     export OMDB_API_KEY='your_key'
+   - Create a `.env` file in the root directory of the project
+   - Add your API key to the `.env` file:
      ```
+     OMDB_API_KEY=your_key_here
+     ```
+     Replace `your_key_here` with the actual API key you received from OMDB.
+
+   Note: The `.env` file is already in `.gitignore` to keep your API key secure.
 
 2. Install and Run:
    ```bash
@@ -195,7 +195,7 @@ if response.status_code == 200:
 
 If you encounter any issues:
 1. Check the service is running (`python service.py`)
-2. Verify your OMDB API key is set correctly
+2. Verify your OMDB API key is set correctly in the `.env` file
 3. Contact me via Teams:
    - Available: 7 PM - 11 PM PST weekdays
    - Response time: Within 24-48 hours
@@ -210,3 +210,4 @@ If you encounter any issues:
 - Flask 3.0.2
 - Requests 2.31.0
 - Flask-CORS 4.0.0
+- python-dotenv 1.0.0

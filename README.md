@@ -31,18 +31,15 @@ A microservice that provides movie information through a REST API, powered by th
    python cli.py
    ```
 
-## Using the CLI
-
 The CLI provides these commands:
-- `search <title>` - Search for any movie by title
 - `details <movie_id>` - Get details for a specific movie
+- `search <title>` - Search for any movie by title
 - `health` - Check if the service is running
 - `help` - Show available commands
 - `quit` or `exit` - Exit the CLI
 
 Example usage:
 ```bash
-# Search for any movie
 movies> search Inception
 Search Results:
 
@@ -51,7 +48,6 @@ Title: Inception
 Year: 2010
 Rating: PG-13
 
-# Get movie details
 movies> details tt1375666
 Movie Details:
 Title: Inception
@@ -60,12 +56,12 @@ Runtime: 148 minutes
 Rating: PG-13
 
 Cast:
-- Leonardo DiCaprio as Actor
-- Joseph Gordon-Levitt as Actor
-- Ellen Page as Actor
+- Leonardo DiCaprio as Cobb
+- Joseph Gordon-Levitt as Arthur
+- Ellen Page as Ariadne
 
 Release Dates:
-- US: 16 Jul 2010
+- US: 2010-07-16
 ```
 
 ## How to Request Data
@@ -104,7 +100,9 @@ if response.status_code == 200:
         print(f"Found: {movie['title']} ({movie['year']})")
 ```
 
-## Response Format
+## How to Receive Data
+
+The service returns JSON-formatted responses:
 
 ### 1. Successful Response
 ```json
@@ -117,11 +115,11 @@ if response.status_code == 200:
     "cast": [
         {
             "name": "Leonardo DiCaprio",
-            "role": "Actor"
+            "role": "Cobb"
         }
     ],
     "release_dates": {
-        "US": "16 Jul 2010"
+        "US": "2010-07-16"
     }
 }
 ```
@@ -198,13 +196,14 @@ if response.status_code == 200:
 If you encounter any issues:
 1. Check the service is running (`python service.py`)
 2. Verify your OMDB API key is set correctly
-3. Contact me:
-   - Available via Discord 7PM-11PM PST weekdays
-   - Response time: within 24-48 hours
+3. Contact me via Teams:
+   - Available: 7 PM - 11 PM PST weekdays
+   - Response time: Within 24-48 hours
 
 ## Rate Limits
 - OMDB API: 1,000 requests per day (free tier)
 - Service: 100 requests per minute
+- Exceeding these will return a 429 error
 
 ## Dependencies
 - Python 3.13.1

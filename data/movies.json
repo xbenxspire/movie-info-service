@@ -1,0 +1,47 @@
+{
+  "movies": [
+    {
+      "id": "tt0468569",
+      "title": "The Dark Knight",
+      "year": 2008,
+      "runtime": 152,
+      "rating": "PG-13",
+      "cast": [
+        {
+          "name": "Christian Bale",
+          "role": "Bruce Wayne / Batman"
+        },
+        {
+          "name": "Heath Ledger",
+          "role": "Joker"
+        }
+      ],
+      "release_dates": {
+        "US": "2008-07-18",
+        "UK": "2008-07-24",
+        "JP": "2008-08-09"
+      }
+    },
+    {
+      "id": "tt0372784",
+      "title": "Batman Begins",
+      "year": 2005,
+      "runtime": 140,
+      "rating": "PG-13",
+      "cast": [
+        {
+          "name": "Christian Bale",
+          "role": "Bruce Wayne / Batman"
+        },
+        {
+          "name": "Michael Caine",
+          "role": "Alfred"
+        }
+      ],
+      "release_dates": {
+        "US": "2005-06-15",
+        "UK": "2005-06-16"
+      }
+    }
+  ]
+}

@@ -24,13 +24,45 @@ A microservice that provides movie information through a REST API, powered by th
    # Install dependencies
    pip install -r requirements.txt
 
-   # Start the service
+   # Start the service (in one terminal)
    python service.py
+
+   # Start the CLI (in another terminal)
+   python cli.py
    ```
 
-## Search Movies and Actors
+## Using the CLI
 
-The service provides two types of searches:
+The CLI provides simple commands to search for movies and actors:
+
+```bash
+# Search for a movie
+movies> search Inception
+# Shows: title, year, rating, genre, release date, cast, and crew
+
+# Search for an actor's filmography
+movies> actor Tom Hanks
+# Shows: list of movies the actor has appeared in
+
+# Get help
+movies> help
+# Shows: available commands and examples
+
+# Exit the program
+movies> quit
+```
+
+Each search result includes:
+- Movie title and year
+- Rating (e.g., PG-13)
+- Genre(s)
+- Release date
+- Top 5 cast members
+- Key crew members (director and writers)
+
+## API Integration
+
+If you're integrating the service into your own application, here are the API endpoints:
 
 ### 1. Movie Search
 ```python

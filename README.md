@@ -101,7 +101,7 @@ A microservice that provides movie information through HTTP/JSON communication. 
 
 ```python
 # 1. Search for any movie
-result = get_movie_info("Endgame")
+result = get_movie_info("Gladiator")
 if result and 'movies' in result:
     for movie in result['movies']:
         print(f"Title: {movie['title']} ({movie['year']})")
@@ -109,13 +109,13 @@ if result and 'movies' in result:
         print(f"Cast: {', '.join(movie['cast'])}")
 
 # 2. Get any actor's top movies
-result = get_movie_info("Ethan Hawke", "actor")
+result = get_movie_info("Russell Crowe", "actor")
 if result and 'filmography' in result:
     for movie in result['filmography']:
         print(f"- {movie['title']} ({movie['year']}) - IMDb Rating: {movie['imdb_rating']}")
 
 # 3. Get top movies in any genre
-result = get_movie_info("sci-fi", "genre")
+result = get_movie_info("action", "genre")
 if result and 'movies' in result:
     for movie in result['movies']:
         print(f"- {movie['title']} ({movie['year']}) - IMDb Rating: {movie['imdb_rating']}")
@@ -126,13 +126,13 @@ if result and 'movies' in result:
 1. Movie Search:
 ```json
 {
-    "message": "Found 5 movies matching 'Endgame':",
+    "message": "Found 1 movies matching 'Gladiator':",
     "movies": [{
-        "title": "Avengers: Endgame",
-        "year": 2019,
-        "imdb_rating": "8.4",
+        "title": "Gladiator",
+        "year": 2000,
+        "imdb_rating": "8.5",
         "genre": ["Action", "Adventure", "Drama"],
-        "cast": ["Robert Downey Jr.", "Chris Evans", "Mark Ruffalo"],
+        "cast": ["Russell Crowe", "Joaquin Phoenix", "Connie Nielsen"],
         "plot": "..."
     }]
 }
@@ -141,13 +141,13 @@ if result and 'movies' in result:
 2. Actor's Top Movies:
 ```json
 {
-    "actor": "Ethan Hawke",
-    "message": "Top 5 highest-rated movies starring Ethan Hawke:",
+    "actor": "Russell Crowe",
+    "message": "Top 5 highest-rated movies starring Russell Crowe:",
     "filmography": [
         {
-            "title": "Before Sunset",
-            "year": 2004,
-            "imdb_rating": "8.1",
+            "title": "Gladiator",
+            "year": 2000,
+            "imdb_rating": "8.5",
             "plot": "..."
         }
     ]
@@ -157,14 +157,14 @@ if result and 'movies' in result:
 3. Genre's Top Movies:
 ```json
 {
-    "genre": "sci-fi",
-    "message": "Top 5 highest-rated sci-fi movies:",
+    "genre": "action",
+    "message": "Top 5 highest-rated action movies:",
     "movies": [
         {
-            "title": "The Matrix",
-            "year": 1999,
-            "imdb_rating": "8.7",
-            "genre": ["Action", "Sci-Fi"],
+            "title": "The Dark Knight",
+            "year": 2008,
+            "imdb_rating": "9.0",
+            "genre": ["Action", "Crime", "Drama"],
             "plot": "..."
         }
     ]

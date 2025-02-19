@@ -42,8 +42,8 @@ def main():
     print("Make sure service.py is running!")
     
     # Example 1: Search for any movie
-    print("\nSearching for 'Endgame'...")
-    result = get_movie_info("Endgame")
+    print("\nSearching for 'Gladiator'...")
+    result = get_movie_info("Gladiator")
     if result and 'movies' in result:
         print(f"Found: {result['message']}")
         for movie in result['movies']:
@@ -52,16 +52,16 @@ def main():
             print(f"Cast: {', '.join(movie['cast'])}")
     
     # Example 2: Get any actor's top movies
-    print("\nGetting Ethan Hawke's top movies...")
-    result = get_movie_info("Ethan Hawke", "actor")
+    print("\nGetting Russell Crowe's top movies...")
+    result = get_movie_info("Russell Crowe", "actor")
     if result and 'filmography' in result:
         print(f"\n{result['message']}")
         for movie in result['filmography']:
             print(f"- {movie['title']} ({movie['year']}) - IMDb Rating: {movie['imdb_rating']}")
     
     # Example 3: Get top movies in any genre
-    print("\nGetting top sci-fi movies...")
-    result = get_movie_info("sci-fi", "genre")
+    print("\nGetting top action movies...")
+    result = get_movie_info("action", "genre")
     if result and 'movies' in result:
         print(f"\n{result['message']}")
         for movie in result['movies']:

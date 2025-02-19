@@ -1,18 +1,23 @@
 # Movie Information Microservice
 
-A microservice that provides movie information through a REST API, powered by the OMDB API. Returns accurate, sorted movie data including top-rated movies by actor and genre.
+A microservice that provides movie information through JSON file communication. Returns accurate, sorted movie data including top-rated movies by actor and genre.
 
-## Features
+## Communication Pipe
 
-- Movie Search: Find any movie with full details
-- Actor Search: Get an actor's top 5 highest-rated movies
-- Genre Search: Get top 5 highest-rated movies in any genre
-- All results sorted by IMDb rating
-- Includes plot summaries, cast, and crew information
+This service uses JSON files for communication:
+1. Your program writes requests to: `data/movies_request.json`
+2. Service reads the request and processes it
+3. Service writes response to: `data/movies_response.json`
+4. Your program reads and processes the response
+
+Benefits:
+- No special libraries needed (just Python's built-in modules)
+- Works with any programming language that can read/write JSON
+- Simple to integrate into any application
 
 ## Quick Start
 
-1. Get OMDB API Key:
+1. Get OMDB API Key (only needed for running the service):
    ```bash
    # 1. Visit http://www.omdbapi.com/
    # 2. Click "API Key" tab
@@ -21,161 +26,163 @@ A microservice that provides movie information through a REST API, powered by th
    # 5. Click activation link in email
    
    # Create .env file and add your key:
-   echo "OMDB_API_KEY=your_key_here" > .env
+   OMDB_API_KEY=your_key_here
    ```
 
-2. Install and Run:
+2. Start the Service:
    ```bash
-   # Clone and setup
-   git clone https://github.com/xbenxspire/movie-info-service.git
-   cd movie-info-service
-   pip install -r requirements.txt
-
-   # Start the service (keep this running)
+   # Just run the service:
    python service.py
    ```
 
-## Using the Microservice
+## Using the Service
 
-The service provides three main endpoints, all returning results sorted by IMDb rating:
+Copy this function into your program:
 
-### 1. Search Movies
 ```python
-import requests
+import json
+import time
+import os
 
-# Find any movie
-response = requests.get(
-    "http://localhost:5000/api/v1/movies/search",
-    params={"q": "The Dark Knight"},
-    headers={"Accept": "application/json"}
-)
+def get_movie_info(query, search_type="movie"):
+    """
+    Get movie information from the service.
+    
+    Args:
+        query (str): Any movie title, actor name, or genre to search for
+        search_type (str): One of "movie", "actor", or "genre"
+    
+    Returns:
+        dict: Movie data if found, None if not found
+    """
+    # Create data directory if needed
+    if not os.path.exists('data'):
+        os.makedirs('data')
+    
+    # Write request to JSON file
+    request = {
+        "query": query,
+        "type": search_type,
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ")
+    }
+    with open('data/movies_request.json', 'w') as f:
+        json.dump(request, f, indent=2)
+    
+    # Wait for response
+    max_attempts = 10
+    attempts = 0
+    while attempts < max_attempts:
+        if os.path.exists('data/movies_response.json'):
+            with open('data/movies_response.json', 'r') as f:
+                response = json.load(f)
+            os.remove('data/movies_response.json')
+            return response
+        time.sleep(0.5)
+        attempts += 1
+    
+    return None
+```
 
-# Example Response:
+### Example Usage
+
+```python
+# 1. Search for any movie
+result = get_movie_info("Inception")
+if result and 'movies' in result:
+    for movie in result['movies']:
+        print(f"Title: {movie['title']} ({movie['year']})")
+        print(f"IMDb Rating: {movie['imdb_rating']}")
+        print(f"Cast: {', '.join(movie['cast'])}")
+
+# 2. Get any actor's top movies
+result = get_movie_info("Morgan Freeman", "actor")
+if result and 'filmography' in result:
+    for movie in result['filmography']:
+        print(f"- {movie['title']} ({movie['year']}) - IMDb Rating: {movie['imdb_rating']}")
+
+# 3. Get top movies in any genre
+result = get_movie_info("sci-fi", "genre")
+if result and 'movies' in result:
+    for movie in result['movies']:
+        print(f"- {movie['title']} ({movie['year']}) - IMDb Rating: {movie['imdb_rating']}")
+```
+
+### Example Responses
+
+1. Movie Search:
+```json
 {
-    "message": "Found 1 movies matching 'The Dark Knight':",
+    "message": "Found 1 movies matching 'Inception':",
     "movies": [{
-        "title": "The Dark Knight",
-        "year": 2008,
-        "imdb_rating": "9.0",
-        "genre": ["Action", "Crime", "Drama"],
-        "cast": ["Christian Bale", "Heath Ledger", "Aaron Eckhart"],
+        "title": "Inception",
+        "year": 2010,
+        "imdb_rating": "8.8",
+        "genre": ["Action", "Adventure", "Sci-Fi"],
+        "cast": ["Leonardo DiCaprio", "Joseph Gordon-Levitt"],
         "plot": "..."
     }]
 }
 ```
 
-### 2. Search Actor's Top Movies
-```python
-# Get actor's top 5 highest-rated movies
-response = requests.get(
-    "http://localhost:5000/api/v1/movies/search",
-    params={"q": "Christian Bale", "type": "actor"},
-    headers={"Accept": "application/json"}
-)
-
-# Example Response:
+2. Actor's Top Movies:
+```json
 {
-    "actor": "Christian Bale",
-    "message": "Top 5 highest-rated movies starring Christian Bale:",
+    "actor": "Morgan Freeman",
+    "message": "Top 5 highest-rated movies starring Morgan Freeman:",
     "filmography": [
         {
-            "title": "The Dark Knight",
-            "year": 2008,
-            "imdb_rating": "9.0",
+            "title": "The Shawshank Redemption",
+            "year": 1994,
+            "imdb_rating": "9.3",
             "plot": "..."
-        },
-        {
-            "title": "The Prestige",
-            "year": 2006,
-            "imdb_rating": "8.5",
-            "plot": "..."
-        },
-        // ... more movies sorted by rating
+        }
     ]
 }
 ```
 
-### 3. Search Genre's Top Movies
-```python
-# Get top 5 highest-rated movies in a genre
-response = requests.get(
-    "http://localhost:5000/api/v1/movies/search",
-    params={"q": "mystery", "type": "genre"},
-    headers={"Accept": "application/json"}
-)
-
-# Example Response:
+3. Genre's Top Movies:
+```json
 {
-    "genre": "mystery",
-    "message": "Top 5 highest-rated mystery movies:",
+    "genre": "sci-fi",
+    "message": "Top 5 highest-rated sci-fi movies:",
     "movies": [
         {
-            "title": "Se7en",
-            "year": 1995,
-            "imdb_rating": "8.6",
-            "genre": ["Crime", "Drama", "Mystery"],
+            "title": "The Matrix",
+            "year": 1999,
+            "imdb_rating": "8.7",
+            "genre": ["Action", "Sci-Fi"],
             "plot": "..."
-        },
-        {
-            "title": "The Prestige",
-            "year": 2006,
-            "imdb_rating": "8.5",
-            "plot": "..."
-        },
-        // ... more movies sorted by rating
+        }
     ]
 }
 ```
 
-## Example Integration
+## How It Works
 
-Here's how to integrate the movie service into your application:
+1. Your program creates a request:
+   ```json
+   {
+       "query": "Inception",
+       "type": "movie",
+       "timestamp": "2025-02-18T19:31:29Z"
+   }
+   ```
 
-```python
-def get_movie_info(query, search_type="movie"):
-    """
-    Get movie information from the microservice.
-    
-    Args:
-        query (str): Movie title, actor name, or genre
-        search_type (str): One of "movie", "actor", or "genre"
-    
-    Returns:
-        dict: JSON response with movie data
-    """
-    try:
-        response = requests.get(
-            "http://localhost:5000/api/v1/movies/search",
-            params={
-                "q": query,
-                "type": search_type
-            },
-            headers={"Accept": "application/json"}
-        )
-        
-        if response.status_code == 200:
-            return response.json()
-        else:
-            print(f"Error: {response.json()['error']['message']}")
-            return None
-            
-    except requests.exceptions.ConnectionError:
-        print("Error: Movie service is not running")
-        print("Start it with: python service.py")
-        return None
+2. Saves it to: `data/movies_request.json`
 
-# Example Usage:
-movie = get_movie_info("The Dark Knight")
-actor = get_movie_info("Christian Bale", "actor")
-genre = get_movie_info("mystery", "genre")
-```
+3. Service detects the file and processes it
+
+4. Service writes response to: `data/movies_response.json`
+
+5. Your program reads the response and processes it
+
+All files are automatically cleaned up after each request!
 
 ## Error Handling
 
 The service returns clear error messages:
 
-```python
-# No results
+```json
 {
     "error": {
         "code": "NOT_FOUND",
@@ -184,47 +191,18 @@ The service returns clear error messages:
         "timestamp": "2025-02-04T19:31:29Z"
     }
 }
-
-# Missing query
-{
-    "error": {
-        "code": "BAD_REQUEST",
-        "message": "Search query is required",
-        "details": "Please provide a search term",
-        "timestamp": "2025-02-04T19:31:29Z"
-    }
-}
 ```
-
-## Health Check
-
-Monitor the service status:
-
-```python
-response = requests.get("http://localhost:5000/health")
-if response.status_code == 200:
-    data = response.json()
-    print(f"Service: {data['status']}")
-    print(f"OMDB API: {data['omdb_api']}")
-```
-
-## Rate Limits
-- OMDB API: 1,000 requests per day (free tier)
-- Service: 100 requests per minute
-- Exceeding these will return a 429 error
 
 ## Support
 
 If you encounter any issues:
 1. Check the service is running (`python service.py`)
-2. Verify your OMDB API key is set correctly in the `.env` file
+2. Make sure the data directory exists
 3. Contact me via Teams:
    - Available: 7 PM - 11 PM PST weekdays
    - Response time: Within 24-48 hours
 
-## Dependencies
-- Python 3.13.1
-- Flask 3.0.2
-- Requests 2.31.0
-- Flask-CORS 4.0.0
-- python-dotenv 1.0.0
+## Rate Limits
+- OMDB API: 1,000 requests per day (free tier)
+- Service: No rate limits
+- All results cached for performance

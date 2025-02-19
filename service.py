@@ -2,15 +2,10 @@ import os
 import json
 import time
 import requests
-from flask import Flask, jsonify, request
-from flask_cors import CORS
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
-
-app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
 
 # Get OMDB API key from environment
 OMDB_API_KEY = os.getenv('OMDB_API_KEY')
@@ -232,74 +227,107 @@ def search_by_genre(genre):
     
     return sorted_results
 
-@app.route('/api/v1/movies/search', methods=['GET'])
-def search_endpoint():
-    """Search for movies by title, actor name, or genre."""
-    query = request.args.get('q', '').strip()
-    search_type = request.args.get('type', 'movie').strip().lower()
-
-    if not query:
-        return jsonify({
+def process_request():
+    """Process movie information requests from JSON file."""
+    try:
+        # Read request
+        with open('data/movies_request.json', 'r') as f:
+            request = json.load(f)
+        
+        # Process request
+        query = request.get('query', '').strip()
+        search_type = request.get('type', 'movie').strip().lower()
+        
+        if not query:
+            response = {
+                "error": {
+                    "code": "BAD_REQUEST",
+                    "message": "Search query is required",
+                    "details": "Please provide a search term",
+                    "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ")
+                }
+            }
+        else:
+            if search_type == 'actor':
+                results = search_actor_filmography(query)
+                if results:
+                    response = {
+                        "actor": query,
+                        "message": f"Top {len(results)} highest-rated movies starring {query}:",
+                        "filmography": results
+                    }
+                else:
+                    response = None
+            elif search_type == 'genre':
+                results = search_by_genre(query)
+                if results:
+                    response = {
+                        "genre": query,
+                        "message": f"Top {len(results)} highest-rated {query} movies:",
+                        "movies": results
+                    }
+                else:
+                    response = None
+            else:
+                results = search_movies(query)
+                if results:
+                    response = {
+                        "message": f"Found {len(results)} movies matching '{query}' (sorted by IMDb rating):",
+                        "movies": results
+                    }
+                else:
+                    response = None
+            
+            if not response:
+                response = {
+                    "error": {
+                        "code": "NOT_FOUND",
+                        "message": f"No results found for {query}",
+                        "details": "Try a different search term",
+                        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    }
+                }
+        
+        # Write response
+        with open('data/movies_response.json', 'w') as f:
+            json.dump(response, f, indent=2)
+        
+        # Clean up request file
+        os.remove('data/movies_request.json')
+        
+    except Exception as e:
+        # Handle any errors
+        response = {
             "error": {
-                "code": "BAD_REQUEST",
-                "message": "Search query is required",
-                "details": "Please provide a search term",
+                "code": "INTERNAL_ERROR",
+                "message": str(e),
+                "details": "An error occurred processing the request",
                 "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ")
             }
-        }), 400
-    
-    if search_type == 'actor':
-        results = search_actor_filmography(query)
-        if results:
-            return jsonify({
-                "actor": query,
-                "message": f"Top {len(results)} highest-rated movies starring {query}:",
-                "filmography": results
-            })
-    elif search_type == 'genre':
-        results = search_by_genre(query)
-        if results:
-            return jsonify({
-                "genre": query,
-                "message": f"Top {len(results)} highest-rated {query} movies:",
-                "movies": results
-            })
-    else:
-        results = search_movies(query)
-        if results:
-            return jsonify({
-                "message": f"Found {len(results)} movies matching '{query}' (sorted by IMDb rating):",
-                "movies": results
-            })
-
-    return jsonify({
-        "error": {
-            "code": "NOT_FOUND",
-            "message": f"No results found for {query}",
-            "details": "Try a different search term",
-            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ")
         }
-    }), 404
+        with open('data/movies_response.json', 'w') as f:
+            json.dump(response, f, indent=2)
 
-@app.route('/health', methods=['GET'])
-def health_check():
-    """Health check endpoint."""
-    try:
-        response = requests.get(
-            OMDB_API_URL,
-            params={
-                'apikey': OMDB_API_KEY,
-                'i': 'tt0468569'  # The Dark Knight as test
-            }
-        )
-        omdb_status = "healthy" if response.status_code == 200 else "unhealthy"
-    except Exception:
-        omdb_status = "unhealthy"
-
-    return jsonify({
-        "status": "healthy",
-        "omdb_api": omdb_status
-    })
+def main():
+    """Main service loop."""
+    print("Movie Information Service")
+    print("========================")
+    print("Watching for requests in data/movies_request.json...")
+    
+    # Ensure data directory exists
+    if not os.path.exists('data'):
+        os.makedirs('data')
+    
+    # Service loop
+    while True:
+        try:
+            if os.path.exists('data/movies_request.json'):
+                print("\nProcessing request...")
+                process_request()
+                print("Request processed.")
+        except Exception as e:
+            print(f"Error: {str(e)}")
+        time.sleep(0.5)  # Check every half second
 
 if __name__ == '__main__':
-    app.run(port=5000)
+    main()

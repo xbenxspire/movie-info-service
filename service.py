@@ -2,10 +2,15 @@ import os
 import json
 import time
 import requests
+from flask import Flask, jsonify, request
+from flask_cors import CORS
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
+
+app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 # Get OMDB API key from environment
 OMDB_API_KEY = os.getenv('OMDB_API_KEY')
@@ -14,43 +19,9 @@ if not OMDB_API_KEY:
 
 OMDB_API_URL = "http://www.omdbapi.com/"
 
-# Known IMDb IDs for top movies
-TOP_ACTOR_MOVIES = {
-    "tom hanks": [
-        "tt0109830",  # Forrest Gump (8.8)
-        "tt0120689",  # The Green Mile (8.6)
-        "tt0120815",  # Saving Private Ryan (8.6)
-        "tt0435761",  # Toy Story 3 (8.3)
-        "tt0264464"   # Catch Me If You Can (8.1)
-    ],
-    "christian bale": [
-        "tt0468569",  # The Dark Knight (9.0)
-        "tt0482571",  # The Prestige (8.5)
-        "tt1345836",  # The Dark Knight Rises (8.4)
-        "tt0372784",  # Batman Begins (8.2)
-        "tt1392214"   # The Fighter (7.8)
-    ]
-}
-
-TOP_GENRE_MOVIES = {
-    "action": [
-        "tt0468569",  # The Dark Knight (9.0)
-        "tt1375666",  # Inception (8.8)
-        "tt0133093",  # The Matrix (8.7)
-        "tt0080684",  # Star Wars: Episode V (8.7)
-        "tt0076759"   # Star Wars: Episode IV (8.6)
-    ],
-    "mystery": [
-        "tt0114369",  # Se7en (8.6)
-        "tt0482571",  # The Prestige (8.5)
-        "tt0209144",  # Memento (8.4)
-        "tt0167404",  # The Sixth Sense (8.2)
-        "tt0443706"   # Zodiac (7.7)
-    ]
-}
-
 def fetch_movie_details(movie_id):
     """Fetch movie details from OMDB API."""
+    print(f"Fetching details for movie ID: {movie_id}")
     response = requests.get(
         OMDB_API_URL,
         params={
@@ -88,14 +59,7 @@ def fetch_movie_details(movie_id):
 
 def search_movies(query):
     """Search movies by title."""
-    # Check if searching for The Dark Knight specifically
-    if query.lower() == "the dark knight":
-        movie_id = "tt0468569"  # The Dark Knight IMDb ID
-        details = fetch_movie_details(movie_id)
-        if details:
-            return [details]
-    
-    # Regular title search
+    print(f"Searching for movies matching: {query}")
     response = requests.get(
         OMDB_API_URL,
         params={
@@ -119,26 +83,7 @@ def search_movies(query):
 
 def search_actor_filmography(name):
     """Search for an actor's top movies."""
-    name_lower = name.lower()
-    if name_lower in TOP_ACTOR_MOVIES:
-        # Use known top movies for this actor
-        results = []
-        for movie_id in TOP_ACTOR_MOVIES[name_lower]:
-            details = fetch_movie_details(movie_id)
-            if details:
-                results.append({
-                    'title': details['title'],
-                    'year': details['year'],
-                    'role': 'Actor',
-                    'id': details['id'],
-                    'imdb_rating': details['imdb_rating'],
-                    'plot': details['plot']
-                })
-        # Sort by IMDb rating (highest first)
-        results.sort(key=lambda x: float(x['imdb_rating']) if x['imdb_rating'] != 'N/A' else 0, reverse=True)
-        return results
-    
-    # Fallback to search if actor not in TOP_ACTOR_MOVIES
+    print(f"Searching for {name}'s filmography")
     response = requests.get(
         OMDB_API_URL,
         params={
@@ -169,165 +114,100 @@ def search_actor_filmography(name):
 
 def search_by_genre(genre):
     """Search for top-rated movies in a specific genre."""
-    genre_lower = genre.lower()
-    if genre_lower in TOP_GENRE_MOVIES:
-        # Use known top movies for this genre
-        results = []
-        for movie_id in TOP_GENRE_MOVIES[genre_lower]:
-            details = fetch_movie_details(movie_id)
-            if details:
-                results.append(details)
-        # Sort by IMDb rating (highest first)
-        results.sort(key=lambda x: float(x['imdb_rating']) if x['imdb_rating'] != 'N/A' else 0, reverse=True)
-        return results
+    print(f"Searching for top {genre} movies")
+    response = requests.get(
+        OMDB_API_URL,
+        params={
+            'apikey': OMDB_API_KEY,
+            's': genre,
+            'type': 'movie'
+        }
+    )
+    if response.status_code == 200:
+        data = response.json()
+        if data.get('Response') == 'True':
+            results = []
+            for movie in data['Search'][:10]:
+                details = fetch_movie_details(movie['imdbID'])
+                if details and genre.lower() in [g.lower() for g in details['genre']]:
+                    results.append(details)
+            
+            # Sort by IMDb rating and get top 5
+            results.sort(key=lambda x: float(x['imdb_rating']) if x['imdb_rating'] != 'N/A' else 0, reverse=True)
+            return results[:5]
+    return []
+
+@app.route('/api/v1/movies/search', methods=['GET'])
+def search_endpoint():
+    """Search for movies by title, actor name, or genre."""
+    query = request.args.get('q', '').strip()
+    search_type = request.args.get('type', 'movie').strip().lower()
+
+    if not query:
+        return jsonify({
+            "error": {
+                "code": "BAD_REQUEST",
+                "message": "Search query is required",
+                "details": "Please provide a search term",
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ")
+            }
+        }), 400
     
-    # Fallback to search if genre not in TOP_GENRE_MOVIES
-    common_terms = {
-        'action': ['action', 'adventure', 'thriller'],
-        'comedy': ['comedy', 'funny', 'humor'],
-        'drama': ['drama', 'dramatic'],
-        'horror': ['horror', 'scary', 'thriller'],
-        'sci-fi': ['sci-fi', 'science fiction', 'space'],
-        'romance': ['romance', 'romantic', 'love'],
-        'mystery': ['mystery', 'detective', 'crime'],
-        'documentary': ['documentary', 'doc'],
-        'animation': ['animation', 'animated', 'cartoon'],
-        'family': ['family', 'children', 'kids']
-    }
-    
-    search_terms = common_terms.get(genre_lower, [genre])
-    results = []
-    
-    for term in search_terms:
+    if search_type == 'actor':
+        results = search_actor_filmography(query)
+        if results:
+            return jsonify({
+                "actor": query,
+                "message": f"Top {len(results)} highest-rated movies starring {query}:",
+                "filmography": results
+            })
+    elif search_type == 'genre':
+        results = search_by_genre(query)
+        if results:
+            return jsonify({
+                "genre": query,
+                "message": f"Top {len(results)} highest-rated {query} movies:",
+                "movies": results
+            })
+    else:
+        results = search_movies(query)
+        if results:
+            return jsonify({
+                "message": f"Found {len(results)} movies matching '{query}' (sorted by IMDb rating):",
+                "movies": results
+            })
+
+    return jsonify({
+        "error": {
+            "code": "NOT_FOUND",
+            "message": f"No results found for {query}",
+            "details": "Try a different search term",
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ")
+        }
+    }), 404
+
+@app.route('/health', methods=['GET'])
+def health_check():
+    """Health check endpoint."""
+    try:
         response = requests.get(
             OMDB_API_URL,
             params={
                 'apikey': OMDB_API_KEY,
-                's': term,
-                'type': 'movie'
+                'i': 'tt0468569'  # The Dark Knight as test
             }
         )
-        if response.status_code == 200:
-            data = response.json()
-            if data.get('Response') == 'True':
-                for movie in data['Search'][:10]:
-                    details = fetch_movie_details(movie['imdbID'])
-                    if details and genre.lower() in [g.lower() for g in details['genre']]:
-                        results.append(details)
-    
-    # Remove duplicates based on movie ID
-    unique_results = {movie['id']: movie for movie in results}.values()
-    
-    # Sort by IMDb rating and get top 5
-    sorted_results = sorted(
-        unique_results,
-        key=lambda x: float(x['imdb_rating']) if x['imdb_rating'] != 'N/A' else 0,
-        reverse=True
-    )[:5]
-    
-    return sorted_results
+        omdb_status = "healthy" if response.status_code == 200 else "unhealthy"
+    except Exception:
+        omdb_status = "unhealthy"
 
-def process_request():
-    """Process movie information requests from JSON file."""
-    try:
-        # Read request
-        with open('data/movies_request.json', 'r') as f:
-            request = json.load(f)
-        
-        # Process request
-        query = request.get('query', '').strip()
-        search_type = request.get('type', 'movie').strip().lower()
-        
-        if not query:
-            response = {
-                "error": {
-                    "code": "BAD_REQUEST",
-                    "message": "Search query is required",
-                    "details": "Please provide a search term",
-                    "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ")
-                }
-            }
-        else:
-            if search_type == 'actor':
-                results = search_actor_filmography(query)
-                if results:
-                    response = {
-                        "actor": query,
-                        "message": f"Top {len(results)} highest-rated movies starring {query}:",
-                        "filmography": results
-                    }
-                else:
-                    response = None
-            elif search_type == 'genre':
-                results = search_by_genre(query)
-                if results:
-                    response = {
-                        "genre": query,
-                        "message": f"Top {len(results)} highest-rated {query} movies:",
-                        "movies": results
-                    }
-                else:
-                    response = None
-            else:
-                results = search_movies(query)
-                if results:
-                    response = {
-                        "message": f"Found {len(results)} movies matching '{query}' (sorted by IMDb rating):",
-                        "movies": results
-                    }
-                else:
-                    response = None
-            
-            if not response:
-                response = {
-                    "error": {
-                        "code": "NOT_FOUND",
-                        "message": f"No results found for {query}",
-                        "details": "Try a different search term",
-                        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ")
-                    }
-                }
-        
-        # Write response
-        with open('data/movies_response.json', 'w') as f:
-            json.dump(response, f, indent=2)
-        
-        # Clean up request file
-        os.remove('data/movies_request.json')
-        
-    except Exception as e:
-        # Handle any errors
-        response = {
-            "error": {
-                "code": "INTERNAL_ERROR",
-                "message": str(e),
-                "details": "An error occurred processing the request",
-                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ")
-            }
-        }
-        with open('data/movies_response.json', 'w') as f:
-            json.dump(response, f, indent=2)
-
-def main():
-    """Main service loop."""
-    print("Movie Information Service")
-    print("========================")
-    print("Watching for requests in data/movies_request.json...")
-    
-    # Ensure data directory exists
-    if not os.path.exists('data'):
-        os.makedirs('data')
-    
-    # Service loop
-    while True:
-        try:
-            if os.path.exists('data/movies_request.json'):
-                print("\nProcessing request...")
-                process_request()
-                print("Request processed.")
-        except Exception as e:
-            print(f"Error: {str(e)}")
-        time.sleep(0.5)  # Check every half second
+    return jsonify({
+        "status": "healthy",
+        "omdb_api": omdb_status
+    })
 
 if __name__ == '__main__':
-    main()
+    print("Movie Information Service")
+    print("========================")
+    print("Running on http://localhost:5000")
+    app.run(port=5000)

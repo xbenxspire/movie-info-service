@@ -1,6 +1,6 @@
 # Movie Information Microservice
 
-A microservice that provides movie information through JSON file communication. Returns accurate, sorted movie data including top-rated movies by actor and genre.
+A microservice that provides movie information through HTTP/JSON communication. Returns accurate, sorted movie data including top-rated movies by actor and genre.
 
 ## For New Users / Teammates
 
@@ -27,14 +27,11 @@ A microservice that provides movie information through JSON file communication. 
    # Run in a terminal and keep it running:
    python service.py
    ```
+   You should see: "Running on http://localhost:5000"
 
 4. Add to Your Program:
    ```python
-   # In your main program (e.g., dashboard.py), add:
-   
-   import json
-   import time
-   import os
+   import requests
 
    def get_movie_info(query, search_type="movie"):
        """
@@ -47,32 +44,27 @@ A microservice that provides movie information through JSON file communication. 
        Returns:
            dict: Movie data if found, None if not found
        """
-       # Create data directory if needed
-       if not os.path.exists('data'):
-           os.makedirs('data')
-       
-       # Write request to JSON file
-       request = {
-           "query": query,
-           "type": search_type,
-           "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ")
-       }
-       with open('data/movies_request.json', 'w') as f:
-           json.dump(request, f, indent=2)
-       
-       # Wait for response
-       max_attempts = 10
-       attempts = 0
-       while attempts < max_attempts:
-           if os.path.exists('data/movies_response.json'):
-               with open('data/movies_response.json', 'r') as f:
-                   response = json.load(f)
-               os.remove('data/movies_response.json')
-               return response
-           time.sleep(0.5)
-           attempts += 1
-       
-       return None
+       try:
+           response = requests.get(
+               "http://localhost:5000/api/v1/movies/search",
+               params={
+                   "q": query,
+                   "type": search_type
+               },
+               headers={"Accept": "application/json"}
+           )
+           
+           if response.status_code == 200:
+               return response.json()
+           else:
+               error = response.json().get('error', {})
+               print(f"Error: {error.get('message', 'Unknown error')}")
+               return None
+               
+       except requests.exceptions.ConnectionError:
+           print("Error: Movie service is not running")
+           print("Start it with: python service.py")
+           return None
 
    # Then use it in your code:
    def handle_movie_command():
@@ -89,10 +81,9 @@ A microservice that provides movie information through JSON file communication. 
 ## How It Works
 
 1. Communication Flow:
-   - Your program writes requests to: `data/movies_request.json`
-   - Service reads the request and processes it
-   - Service writes response to: `data/movies_response.json`
-   - Your program reads and processes the response
+   - Your program makes HTTP GET requests to http://localhost:5000
+   - Service processes the request and returns JSON response
+   - All results sorted by IMDb rating
 
 2. Features:
    - Search any movie by title
@@ -101,16 +92,16 @@ A microservice that provides movie information through JSON file communication. 
    - All results sorted by IMDb rating
 
 3. Benefits:
-   - No special libraries needed
-   - Uses Python's built-in modules
-   - Simple JSON file communication
+   - Simple HTTP/JSON communication
+   - No special setup needed
    - Works with any programming language
+   - Reliable response handling
 
 ## Example Usage
 
 ```python
 # 1. Search for any movie
-result = get_movie_info("Inception")
+result = get_movie_info("Endgame")
 if result and 'movies' in result:
     for movie in result['movies']:
         print(f"Title: {movie['title']} ({movie['year']})")
@@ -118,7 +109,7 @@ if result and 'movies' in result:
         print(f"Cast: {', '.join(movie['cast'])}")
 
 # 2. Get any actor's top movies
-result = get_movie_info("Morgan Freeman", "actor")
+result = get_movie_info("Ethan Hawke", "actor")
 if result and 'filmography' in result:
     for movie in result['filmography']:
         print(f"- {movie['title']} ({movie['year']}) - IMDb Rating: {movie['imdb_rating']}")
@@ -135,13 +126,13 @@ if result and 'movies' in result:
 1. Movie Search:
 ```json
 {
-    "message": "Found 1 movies matching 'Inception':",
+    "message": "Found 5 movies matching 'Endgame':",
     "movies": [{
-        "title": "Inception",
-        "year": 2010,
-        "imdb_rating": "8.8",
-        "genre": ["Action", "Adventure", "Sci-Fi"],
-        "cast": ["Leonardo DiCaprio", "Joseph Gordon-Levitt"],
+        "title": "Avengers: Endgame",
+        "year": 2019,
+        "imdb_rating": "8.4",
+        "genre": ["Action", "Adventure", "Drama"],
+        "cast": ["Robert Downey Jr.", "Chris Evans", "Mark Ruffalo"],
         "plot": "..."
     }]
 }
@@ -150,13 +141,13 @@ if result and 'movies' in result:
 2. Actor's Top Movies:
 ```json
 {
-    "actor": "Morgan Freeman",
-    "message": "Top 5 highest-rated movies starring Morgan Freeman:",
+    "actor": "Ethan Hawke",
+    "message": "Top 5 highest-rated movies starring Ethan Hawke:",
     "filmography": [
         {
-            "title": "The Shawshank Redemption",
-            "year": 1994,
-            "imdb_rating": "9.3",
+            "title": "Before Sunset",
+            "year": 2004,
+            "imdb_rating": "8.1",
             "plot": "..."
         }
     ]
@@ -199,9 +190,8 @@ The service returns clear error messages:
 
 If you encounter any issues:
 1. Check the service is running (`python service.py`)
-2. Make sure the data directory exists
-3. Verify your OMDB API key in .env
-4. Contact me via Teams:
+2. Verify your OMDB API key in .env
+3. Contact me via Teams:
    - Available: 7 PM - 11 PM PST weekdays
    - Response time: Within 24-48 hours
 

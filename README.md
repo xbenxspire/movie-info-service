@@ -2,6 +2,20 @@
 
 A microservice that provides movie information through a REST API, powered by the OMDB API.
 
+## Repository Structure
+
+```
+movie-info-service/
+├── service.py          # Headless microservice (core service)
+├── test_microservice.py # Demonstration program
+├── test_service.py     # Internal unit tests
+├── example/            # Example code for integration
+│   └── cli.py         # Example CLI implementation
+├── data/              # Data directory
+│   └── movies.json    # Movie database
+└── README.md          # Documentation
+```
+
 ## Quick Start
 
 1. Get OMDB API Key:
@@ -24,64 +38,47 @@ A microservice that provides movie information through a REST API, powered by th
    # Install dependencies
    pip install -r requirements.txt
 
-   # Start the service (in one terminal)
+   # Start the microservice
    python service.py
-
-   # Start the CLI (in another terminal)
-   python cli.py
    ```
 
-## Using the CLI
+3. Test the Service:
+   ```bash
+   # Run the demonstration program
+   python test_microservice.py
+   ```
 
-The CLI provides simple commands to search for movies and actors:
+## Testing the Microservice
 
+The repository includes two test programs:
+
+### 1. Demonstration Program (test_microservice.py)
+This program shows how to interact with the microservice programmatically:
+- Health check functionality
+- Movie search examples
+- Actor search examples
+- Genre search examples
+- Error handling examples
+
+Run it with:
 ```bash
-# Search for a movie
-movies> search Inception
-# Shows: title, year, rating, IMDb rating, genre, release date, cast, and crew
-
-# Search for an actor's filmography
-movies> actor Tom Hanks
-# Shows: list of movies the actor has appeared in, sorted by IMDb rating
-
-# Search for top-rated movies by genre
-movies> genre action
-# Shows: top 5 action movies sorted by IMDb rating
-
-# See available genres
-movies> help genre
-# Shows: list of all available genres with descriptions
-
-# Get help
-movies> help
-# Shows: available commands and examples
-
-# Exit the program
-movies> quit
+python test_microservice.py
 ```
 
-Available Genres (access with `help genre`):
-```
-  - Action      (action movies, thrillers)
-  - Comedy      (comedy, humor)
-  - Drama       (dramatic films)
-  - Horror      (horror, scary movies)
-  - Sci-Fi      (science fiction, space)
-  - Romance     (romantic films)
-  - Mystery     (detective, crime)
-  - Documentary (documentaries)
-  - Animation   (animated films)
-  - Family      (family-friendly movies)
+### 2. Unit Tests (test_service.py)
+Internal tests for service functionality:
+- API endpoint testing
+- Response validation
+- Error case testing
+
+Run it with:
+```bash
+python test_service.py
 ```
 
-Each search result includes:
-- Movie title and year
-- Rating (e.g., PG-13)
-- IMDb Rating
-- Genre(s)
-- Release date
-- Top 5 cast members
-- Key crew members (director and writers)
+## Example Integration (example/cli.py)
+
+The example directory contains a CLI implementation showing how to integrate the microservice into your own application. This is provided as a reference but should not be used as part of the microservice itself.
 
 ## API Integration
 

@@ -17,12 +17,13 @@ def test_movie_search():
         )
         
         if response.status_code == 200:
-            movies = response.json()
-            print("✓ Successfully retrieved movie data:")
-            for movie in movies:
+            data = response.json()
+            print(f"✓ {data['message']}")
+            for movie in data['movies']:
                 print(f"\nTitle: {movie['title']} ({movie['year']})")
-                print(f"Rating: {movie['rating']}")
                 print(f"IMDb Rating: {movie['imdb_rating']}")
+                print(f"Genre: {', '.join(movie['genre'])}")
+                print(f"Plot: {movie['plot'][:150]}...")  # Show first 150 chars of plot
         else:
             print(f"✗ Error: {response.status_code}")
             print(response.json().get('error', {}).get('message', 'Unknown error'))
@@ -43,9 +44,11 @@ def test_actor_search():
         
         if response.status_code == 200:
             data = response.json()
-            print("✓ Successfully retrieved actor's filmography:")
+            print(f"✓ {data['message']}")
             for movie in data['filmography']:
-                print(f"- {movie['title']} ({movie['year']}) - IMDb Rating: {movie['imdb_rating']}")
+                print(f"\nTitle: {movie['title']} ({movie['year']})")
+                print(f"IMDb Rating: {movie['imdb_rating']}")
+                print(f"Plot: {movie['plot'][:150]}...")  # Show first 150 chars of plot
         else:
             print(f"✗ Error: {response.status_code}")
             print(response.json().get('error', {}).get('message', 'Unknown error'))
@@ -65,9 +68,12 @@ def test_genre_search():
         
         if response.status_code == 200:
             data = response.json()
-            print("✓ Successfully retrieved genre movies:")
+            print(f"✓ {data['message']}")
             for movie in data['movies']:
-                print(f"- {movie['title']} ({movie['year']}) - IMDb Rating: {movie['imdb_rating']}")
+                print(f"\nTitle: {movie['title']} ({movie['year']})")
+                print(f"IMDb Rating: {movie['imdb_rating']}")
+                print(f"Genre: {', '.join(movie['genre'])}")
+                print(f"Plot: {movie['plot'][:150]}...")  # Show first 150 chars of plot
         else:
             print(f"✗ Error: {response.status_code}")
             print(response.json().get('error', {}).get('message', 'Unknown error'))

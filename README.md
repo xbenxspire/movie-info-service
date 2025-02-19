@@ -1,205 +1,181 @@
 # Movie Information Microservice
 
-A microservice that provides movie information through a REST API, powered by the OMDB API.
+A microservice that provides movie information through a REST API, powered by the OMDB API. Returns accurate, sorted movie data including top-rated movies by actor and genre.
 
-## Repository Structure
+## Features
 
-```
-movie-info-service/
-├── service.py          # Headless microservice (core service)
-├── test_microservice.py # Demonstration program
-├── test_service.py     # Internal unit tests
-├── example/            # Example code for integration
-│   └── cli.py         # Example CLI implementation
-├── data/              # Data directory
-│   └── movies.json    # Movie database
-└── README.md          # Documentation
-```
+- Movie Search: Find any movie with full details
+- Actor Search: Get an actor's top 5 highest-rated movies
+- Genre Search: Get top 5 highest-rated movies in any genre
+- All results sorted by IMDb rating
+- Includes plot summaries, cast, and crew information
 
 ## Quick Start
 
 1. Get OMDB API Key:
-   - Visit http://www.omdbapi.com/ to get a free API key
-   - Create a `.env` file in the root directory of the project
-   - Add your API key to the `.env` file:
-     ```
-     OMDB_API_KEY=your_key_here
-     ```
-     Replace `your_key_here` with the actual API key you received from OMDB.
-
-   Note: The `.env` file is already in `.gitignore` to keep your API key secure.
+   ```bash
+   # 1. Visit http://www.omdbapi.com/
+   # 2. Click "API Key" tab
+   # 3. Choose "FREE! (1,000 daily limit)"
+   # 4. Fill out form, get key via email
+   # 5. Click activation link in email
+   
+   # Create .env file and add your key:
+   echo "OMDB_API_KEY=your_key_here" > .env
+   ```
 
 2. Install and Run:
    ```bash
-   # Clone the repository
+   # Clone and setup
    git clone https://github.com/xbenxspire/movie-info-service.git
    cd movie-info-service
-
-   # Install dependencies
    pip install -r requirements.txt
 
-   # Start the microservice (keep this running)
+   # Start the service (keep this running)
    python service.py
    ```
 
-3. Test the Service (Optional):
-   ```bash
-   # In a new terminal, run the demonstration program
-   python test_microservice.py
-   ```
+## Using the Microservice
 
-4. Using the Service:
-   - The microservice runs on http://localhost:5000
-   - Keep service.py running in the background
-   - Make API requests from your application using the endpoints below
-   - See API Integration section for example code
+The service provides three main endpoints, all returning results sorted by IMDb rating:
 
-## Testing the Microservice
-
-The repository includes two test programs:
-
-### 1. Demonstration Program (test_microservice.py)
-This program shows how to interact with the microservice programmatically:
-- Health check functionality
-- Movie search examples
-- Actor search examples
-- Genre search examples
-- Error handling examples
-
-Run it with:
-```bash
-python test_microservice.py
-```
-
-### 2. Unit Tests (test_service.py)
-Internal tests for service functionality:
-- API endpoint testing
-- Response validation
-- Error case testing
-
-Run it with:
-```bash
-python test_service.py
-```
-
-## Example Integration (example/cli.py)
-
-The example directory contains a CLI implementation showing how to integrate the microservice into your own application. This is provided as a reference but should not be used as part of the microservice itself.
-
-## API Integration
-
-Here are reusable functions you can add to your application to search for any movie, actor, or genre:
-
-### 1. Search Any Movie
+### 1. Search Movies
 ```python
 import requests
 
-def search_movie(title):
-    """
-    Get information about any movie.
-    
-    Args:
-        title (str): Any movie title to search for
-    
-    Returns:
-        dict: Movie data if found, None if not found
-    """
-    response = requests.get(
-        "http://localhost:5000/api/v1/movies/search",
-        params={"q": title},
-        headers={"Accept": "application/json"}
-    )
-    return response.json() if response.status_code == 200 else None
+# Find any movie
+response = requests.get(
+    "http://localhost:5000/api/v1/movies/search",
+    params={"q": "The Dark Knight"},
+    headers={"Accept": "application/json"}
+)
 
-# Examples:
-movies = search_movie("The Matrix")
-movies = search_movie("Star Wars")
-movies = search_movie("Jurassic Park")
-
-# Process the results
-if movies:
-    for movie in movies:
-        print(f"\nTitle: {movie['title']} ({movie['year']})")
-        print(f"Rating: {movie['rating']}")
-        print(f"IMDb Rating: {movie['imdb_rating']}")
-        print(f"Genre: {', '.join(movie['genre'])}")
-        print(f"Released: {movie['released']}")
-        print("\nCast:")
-        for actor in movie['cast']:
-            print(f"- {actor}")
-        print("\nCrew:")
-        for crew_member in movie['crew']:
-            print(f"- {crew_member}")
+# Example Response:
+{
+    "message": "Found 1 movies matching 'The Dark Knight':",
+    "movies": [{
+        "title": "The Dark Knight",
+        "year": 2008,
+        "imdb_rating": "9.0",
+        "genre": ["Action", "Crime", "Drama"],
+        "cast": ["Christian Bale", "Heath Ledger", "Aaron Eckhart"],
+        "plot": "..."
+    }]
+}
 ```
 
-### 2. Search Any Actor
+### 2. Search Actor's Top Movies
 ```python
-def search_actor(name):
-    """
-    Get filmography for any actor.
-    
-    Args:
-        name (str): Any actor's name to search for
-    
-    Returns:
-        dict: Actor's filmography if found, None if not found
-    """
-    response = requests.get(
-        "http://localhost:5000/api/v1/movies/search",
-        params={"q": name, "type": "actor"},
-        headers={"Accept": "application/json"}
-    )
-    return response.json() if response.status_code == 200 else None
+# Get actor's top 5 highest-rated movies
+response = requests.get(
+    "http://localhost:5000/api/v1/movies/search",
+    params={"q": "Christian Bale", "type": "actor"},
+    headers={"Accept": "application/json"}
+)
 
-# Examples:
-films = search_actor("Brad Pitt")
-films = search_actor("Morgan Freeman")
-films = search_actor("Meryl Streep")
-
-# Process the results
-if films:
-    print(f"\nFilmography for {films['actor']}:")
-    for movie in films['filmography']:
-        print(f"- {movie['title']} ({movie['year']}) - IMDb Rating: {movie['imdb_rating']}")
+# Example Response:
+{
+    "actor": "Christian Bale",
+    "message": "Top 5 highest-rated movies starring Christian Bale:",
+    "filmography": [
+        {
+            "title": "The Dark Knight",
+            "year": 2008,
+            "imdb_rating": "9.0",
+            "plot": "..."
+        },
+        {
+            "title": "The Prestige",
+            "year": 2006,
+            "imdb_rating": "8.5",
+            "plot": "..."
+        },
+        // ... more movies sorted by rating
+    ]
+}
 ```
 
-### 3. Search Any Genre
+### 3. Search Genre's Top Movies
 ```python
-def search_genre(genre_name):
-    """
-    Get top-rated movies in any genre.
-    
-    Args:
-        genre_name (str): Any genre (action, comedy, drama, etc.)
-    
-    Returns:
-        dict: Genre movies if found, None if not found
-    """
-    response = requests.get(
-        "http://localhost:5000/api/v1/movies/search",
-        params={"q": genre_name, "type": "genre"},
-        headers={"Accept": "application/json"}
-    )
-    return response.json() if response.status_code == 200 else None
+# Get top 5 highest-rated movies in a genre
+response = requests.get(
+    "http://localhost:5000/api/v1/movies/search",
+    params={"q": "mystery", "type": "genre"},
+    headers={"Accept": "application/json"}
+)
 
-# Examples:
-movies = search_genre("comedy")
-movies = search_genre("horror")
-movies = search_genre("drama")
-
-# Process the results
-if movies:
-    print(f"\nTop {len(movies['movies'])} {movies['genre'].title()} Movies:")
-    for movie in movies['movies']:
-        print(f"- {movie['title']} ({movie['year']}) - IMDb Rating: {movie['imdb_rating']}")
+# Example Response:
+{
+    "genre": "mystery",
+    "message": "Top 5 highest-rated mystery movies:",
+    "movies": [
+        {
+            "title": "Se7en",
+            "year": 1995,
+            "imdb_rating": "8.6",
+            "genre": ["Crime", "Drama", "Mystery"],
+            "plot": "..."
+        },
+        {
+            "title": "The Prestige",
+            "year": 2006,
+            "imdb_rating": "8.5",
+            "plot": "..."
+        },
+        // ... more movies sorted by rating
+    ]
+}
 ```
 
-These functions can be copied directly into your application. Just make sure the microservice is running (`python service.py`), and you can search for any movie, actor, or genre!
+## Example Integration
 
-## Error Responses
+Here's how to integrate the movie service into your application:
 
-### 1. No Results Found
-```json
+```python
+def get_movie_info(query, search_type="movie"):
+    """
+    Get movie information from the microservice.
+    
+    Args:
+        query (str): Movie title, actor name, or genre
+        search_type (str): One of "movie", "actor", or "genre"
+    
+    Returns:
+        dict: JSON response with movie data
+    """
+    try:
+        response = requests.get(
+            "http://localhost:5000/api/v1/movies/search",
+            params={
+                "q": query,
+                "type": search_type
+            },
+            headers={"Accept": "application/json"}
+        )
+        
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print(f"Error: {response.json()['error']['message']}")
+            return None
+            
+    except requests.exceptions.ConnectionError:
+        print("Error: Movie service is not running")
+        print("Start it with: python service.py")
+        return None
+
+# Example Usage:
+movie = get_movie_info("The Dark Knight")
+actor = get_movie_info("Christian Bale", "actor")
+genre = get_movie_info("mystery", "genre")
+```
+
+## Error Handling
+
+The service returns clear error messages:
+
+```python
+# No results
 {
     "error": {
         "code": "NOT_FOUND",
@@ -208,10 +184,8 @@ These functions can be copied directly into your application. Just make sure the
         "timestamp": "2025-02-04T19:31:29Z"
     }
 }
-```
 
-### 2. Missing Search Term
-```json
+# Missing query
 {
     "error": {
         "code": "BAD_REQUEST",
@@ -224,6 +198,8 @@ These functions can be copied directly into your application. Just make sure the
 
 ## Health Check
 
+Monitor the service status:
+
 ```python
 response = requests.get("http://localhost:5000/health")
 if response.status_code == 200:
@@ -231,6 +207,11 @@ if response.status_code == 200:
     print(f"Service: {data['status']}")
     print(f"OMDB API: {data['omdb_api']}")
 ```
+
+## Rate Limits
+- OMDB API: 1,000 requests per day (free tier)
+- Service: 100 requests per minute
+- Exceeding these will return a 429 error
 
 ## Support
 
@@ -240,11 +221,6 @@ If you encounter any issues:
 3. Contact me via Teams:
    - Available: 7 PM - 11 PM PST weekdays
    - Response time: Within 24-48 hours
-
-## Rate Limits
-- OMDB API: 1,000 requests per day (free tier)
-- Service: 100 requests per minute
-- Exceeding these will return a 429 error
 
 ## Dependencies
 - Python 3.13.1

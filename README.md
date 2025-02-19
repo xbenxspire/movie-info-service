@@ -48,6 +48,10 @@ movies> actor Tom Hanks
 movies> genre action
 # Shows: top 5 action movies sorted by IMDb rating
 
+# See available genres
+movies> help genre
+# Shows: list of all available genres with descriptions
+
 # Get help
 movies> help
 # Shows: available commands and examples
@@ -56,17 +60,19 @@ movies> help
 movies> quit
 ```
 
-Available Genres:
-- Action
-- Comedy
-- Drama
-- Horror
-- Sci-Fi
-- Romance
-- Mystery
-- Documentary
-- Animation
-- Family
+Available Genres (access with `help genre`):
+```
+  - Action      (action movies, thrillers)
+  - Comedy      (comedy, humor)
+  - Drama       (dramatic films)
+  - Horror      (horror, scary movies)
+  - Sci-Fi      (science fiction, space)
+  - Romance     (romantic films)
+  - Mystery     (detective, crime)
+  - Documentary (documentaries)
+  - Animation   (animated films)
+  - Family      (family-friendly movies)
+```
 
 Each search result includes:
 - Movie title and year

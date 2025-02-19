@@ -12,8 +12,9 @@ Welcome to the Movie Information Service!
 Commands:
   search <title>     - Search for movies by title
   actor <name>       - Search for an actor's filmography
-  genre <type>       - Search top-rated movies by genre (e.g., action, comedy, drama)
+  genre <type>       - Search top-rated movies by genre
   help               - Show this help message
+  help genre         - Show available genres
   quit               - Exit the program
 
 Example:
@@ -21,6 +22,25 @@ Example:
   actor Tom Hanks
   genre action
 """
+
+    genre_help = """
+Available Genres:
+  - Action      (action movies, thrillers)
+  - Comedy      (comedy, humor)
+  - Drama       (dramatic films)
+  - Horror      (horror, scary movies)
+  - Sci-Fi      (science fiction, space)
+  - Romance     (romantic films)
+  - Mystery     (detective, crime)
+  - Documentary (documentaries)
+  - Animation   (animated films)
+  - Family      (family-friendly movies)
+
+Usage: genre <type>
+Example: genre action
+Note: Results show top 5 movies sorted by IMDb rating
+"""
+    
     prompt = 'movies> '
 
     def do_search(self, title: str) -> None:
@@ -91,18 +111,7 @@ Example:
     def do_genre(self, genre: str) -> None:
         """Search for top-rated movies in a specific genre."""
         if not genre:
-            print("Please provide a genre to search for (e.g., action, comedy, drama).")
-            print("\nAvailable genres:")
-            print("- Action")
-            print("- Comedy")
-            print("- Drama")
-            print("- Horror")
-            print("- Sci-Fi")
-            print("- Romance")
-            print("- Mystery")
-            print("- Documentary")
-            print("- Animation")
-            print("- Family")
+            print(self.genre_help)
             return
 
         try:
@@ -130,9 +139,16 @@ Example:
             print(f"\nError connecting to service: {e}")
             print("Please make sure the service is running (python service.py)")
 
+    def help_genre(self) -> None:
+        """Show help for genre command."""
+        print(self.genre_help)
+
     def do_help(self, arg: str) -> None:
         """Show help message."""
-        print(self.intro)
+        if arg == 'genre':
+            self.help_genre()
+        else:
+            print(self.intro)
 
     def do_quit(self, arg: str) -> bool:
         """Exit the program."""

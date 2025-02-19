@@ -38,15 +38,38 @@ movie-info-service/
    # Install dependencies
    pip install -r requirements.txt
 
-   # Start the microservice
+   # Start the microservice (keep this running)
    python service.py
    ```
 
-3. Test the Service:
+3. Test the Service (Optional):
    ```bash
-   # Run the demonstration program
+   # In a new terminal, run the demonstration program
    python test_microservice.py
    ```
+
+4. Using the Service:
+   - The microservice runs on http://localhost:5000
+   - Keep service.py running in the background
+   - Make API requests from your application using the endpoints below
+   - See API Integration section for example code
+
+For example, to search for a movie:
+```python
+import requests
+
+# The service must be running (python service.py)
+response = requests.get(
+    "http://localhost:5000/api/v1/movies/search",
+    params={"q": "Inception"},
+    headers={"Accept": "application/json"}
+)
+
+# Process the response
+if response.status_code == 200:
+    movies = response.json()
+    # Use the movie data in your application
+```
 
 ## Testing the Microservice
 

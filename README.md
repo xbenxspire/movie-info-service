@@ -17,19 +17,29 @@ A microservice that provides movie information through HTTP/JSON communication. 
    # 3. Choose "FREE! (1,000 daily limit)"
    # 4. Fill out form, get key via email
    # 5. Click activation link in email
-   
-   # Create .env file and add your key:
-   OMDB_API_KEY=your_key_here
    ```
 
-3. Start the Service:
+3. Start the Movie Service:
    ```bash
-   # Run in a terminal and keep it running:
+   # In movie-info-service directory:
    python service.py
    ```
-   You should see: "Running on http://localhost:5000"
+   Keep this running in a separate terminal. You should see:
+   "Running on http://localhost:5000"
 
-4. Add to Your Program:
+## Integrating with Your CLI
+
+1. Project Structure:
+   ```
+   your-cli-project/
+   ├── main.py           # Main CLI loop
+   ├── weather.py        # Weather commands
+   ├── todo.py           # Todo commands
+   ├── movie_service.py  # Add movie commands here
+   └── .env             # Add OMDB API key here
+   ```
+
+2. Create movie_service.py:
    ```python
    import requests
 
@@ -66,59 +76,75 @@ A microservice that provides movie information through HTTP/JSON communication. 
            print("Start it with: python service.py")
            return None
 
-   # Then use it in your code:
-   def handle_movie_command():
-       """Example: Get movie info in your CLI."""
-       title = input("Enter movie title: ")
-       result = get_movie_info(title)
+   def handle_movie_search(query):
+       """Search any movie in IMDb's database."""
+       result = get_movie_info(query)
        if result and 'movies' in result:
+           print(f"\n{result['message']}")
            for movie in result['movies']:
                print(f"\nTitle: {movie['title']} ({movie['year']})")
-               print(f"Rating: {movie['imdb_rating']}")
+               print(f"IMDb Rating: {movie['imdb_rating']}")
                print(f"Cast: {', '.join(movie['cast'])}")
+   
+   def handle_actor_search(name):
+       """Get actor's top 5 movies by IMDb rating."""
+       result = get_movie_info(name, "actor")
+       if result and 'filmography' in result:
+           print(f"\n{result['message']}")
+           for movie in result['filmography']:
+               print(f"- {movie['title']} ({movie['year']}) - IMDb Rating: {movie['imdb_rating']}")
+   
+   def handle_genre_search(genre):
+       """Get top 5 movies in genre from IMDb Top 250."""
+       result = get_movie_info(genre, "genre")
+       if result and 'movies' in result:
+           print(f"\n{result['message']}")
+           for movie in result['movies']:
+               print(f"- {movie['title']} ({movie['year']}) - IMDb Rating: {movie['imdb_rating']}")
    ```
 
-## How It Works
+3. Add to Your CLI's Command Handler:
+   ```python
+   # In your main CLI file (e.g., main.py)
+   from movie_service import handle_movie_search, handle_actor_search, handle_genre_search
+   
+   def handle_command(command):
+       """Handle CLI commands."""
+       if command.startswith("/movie"):
+           # Remove "/movie " and search
+           query = command[7:].strip()
+           handle_movie_search(query)
+           
+       elif command.startswith("/actor"):
+           # Remove "/actor " and search
+           name = command[7:].strip()
+           handle_actor_search(name)
+           
+       elif command.startswith("/genre"):
+           # Remove "/genre " and search
+           genre = command[7:].strip()
+           handle_genre_search(genre)
+   ```
 
-1. Communication Flow:
-   - Your program makes HTTP GET requests to http://localhost:5000
-   - Service processes the request and returns JSON response
-   - All results sorted by IMDb rating
+## Example Commands
 
-2. Features:
-   - Search any movie by title
-   - Get any actor's top 5 movies
-   - Get top 5 movies in any genre
-   - All results sorted by IMDb rating
+Your users can now search for any movie, actor, or genre:
 
-3. Benefits:
-   - Simple HTTP/JSON communication
-   - No special setup needed
-   - Works with any programming language
-   - Reliable response handling
+```bash
+# Search any movie (returns top 5 by IMDb rating):
+/movie inception
+/movie dark knight
+/movie matrix
 
-## Example Usage
+# Get any actor's top 5 movies (by IMDb rating):
+/actor tom hanks
+/actor morgan freeman
+/actor leonardo dicaprio
 
-```python
-# 1. Search for any movie
-result = get_movie_info("Gladiator")
-if result and 'movies' in result:
-    for movie in result['movies']:
-        print(f"Title: {movie['title']} ({movie['year']})")
-        print(f"IMDb Rating: {movie['imdb_rating']}")
-        print(f"Cast: {', '.join(movie['cast'])}")
-
-# 2. Get any actor's top movies
-result = get_movie_info("Russell Crowe", "actor")
-if result and 'filmography' in result:
-    for movie in result['filmography']:
-        print(f"- {movie['title']} ({movie['year']}) - IMDb Rating: {movie['imdb_rating']}")
-
-# 3. Get top movies in any genre
-result = get_movie_info("action", "genre")
-if result and 'movies' in result:
-    for movie in result['movies']:
-        print(f"- {movie['title']} ({movie['year']}) - IMDb Rating: {movie['imdb_rating']}")
+# Get top 5 movies in any genre (from IMDb Top 250):
+/genre action
+/genre sci-fi
+/genre drama
 ```
 
 ## Example Responses
@@ -126,45 +152,45 @@ if result and 'movies' in result:
 1. Movie Search:
 ```json
 {
-    "message": "Found 1 movies matching 'Gladiator':",
+    "message": "Found 5 movies matching 'inception':",
     "movies": [{
-        "title": "Gladiator",
-        "year": 2000,
-        "imdb_rating": "8.5",
-        "genre": ["Action", "Adventure", "Drama"],
-        "cast": ["Russell Crowe", "Joaquin Phoenix", "Connie Nielsen"],
+        "title": "Inception",
+        "year": 2010,
+        "imdb_rating": "8.8",
+        "genre": ["Action", "Adventure", "Sci-Fi"],
+        "cast": ["Leonardo DiCaprio", "Joseph Gordon-Levitt", "Ellen Page"],
         "plot": "..."
     }]
 }
 ```
 
-2. Actor's Top Movies:
+2. Actor Search:
 ```json
 {
-    "actor": "Russell Crowe",
-    "message": "Top 5 highest-rated movies starring Russell Crowe:",
+    "actor": "Tom Hanks",
+    "message": "Top 5 highest-rated movies starring Tom Hanks:",
     "filmography": [
         {
-            "title": "Gladiator",
-            "year": 2000,
-            "imdb_rating": "8.5",
+            "title": "Forrest Gump",
+            "year": 1994,
+            "imdb_rating": "8.8",
             "plot": "..."
         }
     ]
 }
 ```
 
-3. Genre's Top Movies:
+3. Genre Search:
 ```json
 {
-    "genre": "action",
-    "message": "Top 5 highest-rated action movies:",
+    "genre": "sci-fi",
+    "message": "Top 5 highest-rated sci-fi movies:",
     "movies": [
         {
-            "title": "The Dark Knight",
-            "year": 2008,
-            "imdb_rating": "9.0",
-            "genre": ["Action", "Crime", "Drama"],
+            "title": "The Matrix",
+            "year": 1999,
+            "imdb_rating": "8.7",
+            "genre": ["Action", "Sci-Fi"],
             "plot": "..."
         }
     ]
@@ -186,6 +212,24 @@ The service returns clear error messages:
 }
 ```
 
+## Important Notes
+
+1. Service Requirements:
+   - Movie service must be running (`python service.py`)
+   - OMDB API key must be in .env file
+   - Python requests library (`pip install requests`)
+
+2. Results:
+   - All searches return top 5 results
+   - Results always sorted by IMDb rating
+   - Genre searches use IMDb Top 250 list
+   - Actor searches return their highest-rated movies
+
+3. Rate Limits:
+   - OMDB API: 1,000 requests per day (free tier)
+   - Service: No rate limits
+   - Results are cached for performance
+
 ## Support
 
 If you encounter any issues:
@@ -194,8 +238,3 @@ If you encounter any issues:
 3. Contact me via Teams:
    - Available: 7 PM - 11 PM PST weekdays
    - Response time: Within 24-48 hours
-
-## Rate Limits
-- OMDB API: 1,000 requests per day (free tier)
-- Service: No rate limits
-- All results cached for performance

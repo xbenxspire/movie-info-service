@@ -54,23 +54,6 @@ movie-info-service/
    - Make API requests from your application using the endpoints below
    - See API Integration section for example code
 
-For example, to search for a movie:
-```python
-import requests
-
-# The service must be running (python service.py)
-response = requests.get(
-    "http://localhost:5000/api/v1/movies/search",
-    params={"q": "Inception"},
-    headers={"Accept": "application/json"}
-)
-
-# Process the response
-if response.status_code == 200:
-    movies = response.json()
-    # Use the movie data in your application
-```
-
 ## Testing the Microservice
 
 The repository includes two test programs:
@@ -105,21 +88,36 @@ The example directory contains a CLI implementation showing how to integrate the
 
 ## API Integration
 
-If you're integrating the service into your own application, here are the API endpoints:
+Here are reusable functions you can add to your application to search for any movie, actor, or genre:
 
-### 1. Movie Search
+### 1. Search Any Movie
 ```python
 import requests
 
-# Search for any movie by title
-response = requests.get(
-    "http://localhost:5000/api/v1/movies/search",
-    params={"q": "Inception"},
-    headers={"Accept": "application/json"}
-)
+def search_movie(title):
+    """
+    Get information about any movie.
+    
+    Args:
+        title (str): Any movie title to search for
+    
+    Returns:
+        dict: Movie data if found, None if not found
+    """
+    response = requests.get(
+        "http://localhost:5000/api/v1/movies/search",
+        params={"q": title},
+        headers={"Accept": "application/json"}
+    )
+    return response.json() if response.status_code == 200 else None
 
-if response.status_code == 200:
-    movies = response.json()
+# Examples:
+movies = search_movie("The Matrix")
+movies = search_movie("Star Wars")
+movies = search_movie("Jurassic Park")
+
+# Process the results
+if movies:
     for movie in movies:
         print(f"\nTitle: {movie['title']} ({movie['year']})")
         print(f"Rating: {movie['rating']}")
@@ -134,37 +132,69 @@ if response.status_code == 200:
             print(f"- {crew_member}")
 ```
 
-### 2. Actor Search
+### 2. Search Any Actor
 ```python
-# Search for an actor's filmography
-response = requests.get(
-    "http://localhost:5000/api/v1/movies/search",
-    params={"q": "Tom Hanks", "type": "actor"},
-    headers={"Accept": "application/json"}
-)
+def search_actor(name):
+    """
+    Get filmography for any actor.
+    
+    Args:
+        name (str): Any actor's name to search for
+    
+    Returns:
+        dict: Actor's filmography if found, None if not found
+    """
+    response = requests.get(
+        "http://localhost:5000/api/v1/movies/search",
+        params={"q": name, "type": "actor"},
+        headers={"Accept": "application/json"}
+    )
+    return response.json() if response.status_code == 200 else None
 
-if response.status_code == 200:
-    data = response.json()
-    print(f"\nFilmography for {data['actor']}:")
-    for movie in data['filmography']:
+# Examples:
+films = search_actor("Brad Pitt")
+films = search_actor("Morgan Freeman")
+films = search_actor("Meryl Streep")
+
+# Process the results
+if films:
+    print(f"\nFilmography for {films['actor']}:")
+    for movie in films['filmography']:
         print(f"- {movie['title']} ({movie['year']}) - IMDb Rating: {movie['imdb_rating']}")
 ```
 
-### 3. Genre Search
+### 3. Search Any Genre
 ```python
-# Search for top-rated movies in a genre
-response = requests.get(
-    "http://localhost:5000/api/v1/movies/search",
-    params={"q": "action", "type": "genre"},
-    headers={"Accept": "application/json"}
-)
+def search_genre(genre_name):
+    """
+    Get top-rated movies in any genre.
+    
+    Args:
+        genre_name (str): Any genre (action, comedy, drama, etc.)
+    
+    Returns:
+        dict: Genre movies if found, None if not found
+    """
+    response = requests.get(
+        "http://localhost:5000/api/v1/movies/search",
+        params={"q": genre_name, "type": "genre"},
+        headers={"Accept": "application/json"}
+    )
+    return response.json() if response.status_code == 200 else None
 
-if response.status_code == 200:
-    data = response.json()
-    print(f"\nTop {len(data['movies'])} {data['genre'].title()} Movies:")
-    for movie in data['movies']:
+# Examples:
+movies = search_genre("comedy")
+movies = search_genre("horror")
+movies = search_genre("drama")
+
+# Process the results
+if movies:
+    print(f"\nTop {len(movies['movies'])} {movies['genre'].title()} Movies:")
+    for movie in movies['movies']:
         print(f"- {movie['title']} ({movie['year']}) - IMDb Rating: {movie['imdb_rating']}")
 ```
+
+These functions can be copied directly into your application. Just make sure the microservice is running (`python service.py`), and you can search for any movie, actor, or genre!
 
 ## Error Responses
 

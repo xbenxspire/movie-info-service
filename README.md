@@ -2,22 +2,15 @@
 
 A microservice that provides movie information through JSON file communication. Returns accurate, sorted movie data including top-rated movies by actor and genre.
 
-## Communication Pipe
+## For New Users / Teammates
 
-This service uses JSON files for communication:
-1. Your program writes requests to: `data/movies_request.json`
-2. Service reads the request and processes it
-3. Service writes response to: `data/movies_response.json`
-4. Your program reads and processes the response
+1. Clone the Repository:
+   ```bash
+   git clone https://github.com/xbenxspire/movie-info-service.git
+   cd movie-info-service
+   ```
 
-Benefits:
-- No special libraries needed (just Python's built-in modules)
-- Works with any programming language that can read/write JSON
-- Simple to integrate into any application
-
-## Quick Start
-
-1. Get OMDB API Key (only needed for running the service):
+2. Get Your OMDB API Key:
    ```bash
    # 1. Visit http://www.omdbapi.com/
    # 2. Click "API Key" tab
@@ -29,61 +22,91 @@ Benefits:
    OMDB_API_KEY=your_key_here
    ```
 
-2. Start the Service:
+3. Start the Service:
    ```bash
-   # Just run the service:
+   # Run in a terminal and keep it running:
    python service.py
    ```
 
-## Using the Service
+4. Add to Your Program:
+   ```python
+   # In your main program (e.g., dashboard.py), add:
+   
+   import json
+   import time
+   import os
 
-Copy this function into your program:
+   def get_movie_info(query, search_type="movie"):
+       """
+       Get movie information from the service.
+       
+       Args:
+           query (str): Any movie title, actor name, or genre to search for
+           search_type (str): One of "movie", "actor", or "genre"
+       
+       Returns:
+           dict: Movie data if found, None if not found
+       """
+       # Create data directory if needed
+       if not os.path.exists('data'):
+           os.makedirs('data')
+       
+       # Write request to JSON file
+       request = {
+           "query": query,
+           "type": search_type,
+           "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ")
+       }
+       with open('data/movies_request.json', 'w') as f:
+           json.dump(request, f, indent=2)
+       
+       # Wait for response
+       max_attempts = 10
+       attempts = 0
+       while attempts < max_attempts:
+           if os.path.exists('data/movies_response.json'):
+               with open('data/movies_response.json', 'r') as f:
+                   response = json.load(f)
+               os.remove('data/movies_response.json')
+               return response
+           time.sleep(0.5)
+           attempts += 1
+       
+       return None
 
-```python
-import json
-import time
-import os
+   # Then use it in your code:
+   def handle_movie_command():
+       """Example: Get movie info in your CLI."""
+       title = input("Enter movie title: ")
+       result = get_movie_info(title)
+       if result and 'movies' in result:
+           for movie in result['movies']:
+               print(f"\nTitle: {movie['title']} ({movie['year']})")
+               print(f"Rating: {movie['imdb_rating']}")
+               print(f"Cast: {', '.join(movie['cast'])}")
+   ```
 
-def get_movie_info(query, search_type="movie"):
-    """
-    Get movie information from the service.
-    
-    Args:
-        query (str): Any movie title, actor name, or genre to search for
-        search_type (str): One of "movie", "actor", or "genre"
-    
-    Returns:
-        dict: Movie data if found, None if not found
-    """
-    # Create data directory if needed
-    if not os.path.exists('data'):
-        os.makedirs('data')
-    
-    # Write request to JSON file
-    request = {
-        "query": query,
-        "type": search_type,
-        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ")
-    }
-    with open('data/movies_request.json', 'w') as f:
-        json.dump(request, f, indent=2)
-    
-    # Wait for response
-    max_attempts = 10
-    attempts = 0
-    while attempts < max_attempts:
-        if os.path.exists('data/movies_response.json'):
-            with open('data/movies_response.json', 'r') as f:
-                response = json.load(f)
-            os.remove('data/movies_response.json')
-            return response
-        time.sleep(0.5)
-        attempts += 1
-    
-    return None
-```
+## How It Works
 
-### Example Usage
+1. Communication Flow:
+   - Your program writes requests to: `data/movies_request.json`
+   - Service reads the request and processes it
+   - Service writes response to: `data/movies_response.json`
+   - Your program reads and processes the response
+
+2. Features:
+   - Search any movie by title
+   - Get any actor's top 5 movies
+   - Get top 5 movies in any genre
+   - All results sorted by IMDb rating
+
+3. Benefits:
+   - No special libraries needed
+   - Uses Python's built-in modules
+   - Simple JSON file communication
+   - Works with any programming language
+
+## Example Usage
 
 ```python
 # 1. Search for any movie
@@ -107,7 +130,7 @@ if result and 'movies' in result:
         print(f"- {movie['title']} ({movie['year']}) - IMDb Rating: {movie['imdb_rating']}")
 ```
 
-### Example Responses
+## Example Responses
 
 1. Movie Search:
 ```json
@@ -157,27 +180,6 @@ if result and 'movies' in result:
 }
 ```
 
-## How It Works
-
-1. Your program creates a request:
-   ```json
-   {
-       "query": "Inception",
-       "type": "movie",
-       "timestamp": "2025-02-18T19:31:29Z"
-   }
-   ```
-
-2. Saves it to: `data/movies_request.json`
-
-3. Service detects the file and processes it
-
-4. Service writes response to: `data/movies_response.json`
-
-5. Your program reads the response and processes it
-
-All files are automatically cleaned up after each request!
-
 ## Error Handling
 
 The service returns clear error messages:
@@ -198,7 +200,8 @@ The service returns clear error messages:
 If you encounter any issues:
 1. Check the service is running (`python service.py`)
 2. Make sure the data directory exists
-3. Contact me via Teams:
+3. Verify your OMDB API key in .env
+4. Contact me via Teams:
    - Available: 7 PM - 11 PM PST weekdays
    - Response time: Within 24-48 hours
 

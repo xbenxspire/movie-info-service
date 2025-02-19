@@ -38,11 +38,15 @@ The CLI provides simple commands to search for movies and actors:
 ```bash
 # Search for a movie
 movies> search Inception
-# Shows: title, year, rating, genre, release date, cast, and crew
+# Shows: title, year, rating, IMDb rating, genre, release date, cast, and crew
 
 # Search for an actor's filmography
 movies> actor Tom Hanks
-# Shows: list of movies the actor has appeared in
+# Shows: list of movies the actor has appeared in, sorted by IMDb rating
+
+# Search for top-rated movies by genre
+movies> genre action
+# Shows: top 5 action movies sorted by IMDb rating
 
 # Get help
 movies> help
@@ -52,9 +56,22 @@ movies> help
 movies> quit
 ```
 
+Available Genres:
+- Action
+- Comedy
+- Drama
+- Horror
+- Sci-Fi
+- Romance
+- Mystery
+- Documentary
+- Animation
+- Family
+
 Each search result includes:
 - Movie title and year
 - Rating (e.g., PG-13)
+- IMDb Rating
 - Genre(s)
 - Release date
 - Top 5 cast members
@@ -80,6 +97,7 @@ if response.status_code == 200:
     for movie in movies:
         print(f"\nTitle: {movie['title']} ({movie['year']})")
         print(f"Rating: {movie['rating']}")
+        print(f"IMDb Rating: {movie['imdb_rating']}")
         print(f"Genre: {', '.join(movie['genre'])}")
         print(f"Released: {movie['released']}")
         print("\nCast:")
@@ -88,32 +106,6 @@ if response.status_code == 200:
         print("\nCrew:")
         for crew_member in movie['crew']:
             print(f"- {crew_member}")
-```
-
-Example Response:
-```json
-[
-    {
-        "id": "tt1375666",
-        "title": "Inception",
-        "year": 2010,
-        "released": "16 Jul 2010",
-        "runtime": 148,
-        "rating": "PG-13",
-        "genre": ["Action", "Adventure", "Sci-Fi"],
-        "cast": [
-            "Leonardo DiCaprio",
-            "Joseph Gordon-Levitt",
-            "Ellen Page",
-            "Tom Hardy",
-            "Ken Watanabe"
-        ],
-        "crew": [
-            "Christopher Nolan (Director)",
-            "Christopher Nolan (Writer)"
-        ]
-    }
-]
 ```
 
 ### 2. Actor Search
@@ -129,28 +121,23 @@ if response.status_code == 200:
     data = response.json()
     print(f"\nFilmography for {data['actor']}:")
     for movie in data['filmography']:
-        print(f"- {movie['title']} ({movie['year']})")
+        print(f"- {movie['title']} ({movie['year']}) - IMDb Rating: {movie['imdb_rating']}")
 ```
 
-Example Response:
-```json
-{
-    "actor": "Tom Hanks",
-    "filmography": [
-        {
-            "title": "Forrest Gump",
-            "year": 1994,
-            "role": "Actor",
-            "id": "tt0109830"
-        },
-        {
-            "title": "Saving Private Ryan",
-            "year": 1998,
-            "role": "Actor",
-            "id": "tt0120815"
-        }
-    ]
-}
+### 3. Genre Search
+```python
+# Search for top-rated movies in a genre
+response = requests.get(
+    "http://localhost:5000/api/v1/movies/search",
+    params={"q": "action", "type": "genre"},
+    headers={"Accept": "application/json"}
+)
+
+if response.status_code == 200:
+    data = response.json()
+    print(f"\nTop {len(data['movies'])} {data['genre'].title()} Movies:")
+    for movie in data['movies']:
+        print(f"- {movie['title']} ({movie['year']}) - IMDb Rating: {movie['imdb_rating']}")
 ```
 
 ## Error Responses

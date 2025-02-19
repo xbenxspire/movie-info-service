@@ -48,6 +48,7 @@ def fetch_movie_details(movie_id):
                 'released': data['Released'],
                 'runtime': int(data['Runtime'].split()[0]) if data['Runtime'].split()[0].isdigit() else 0,
                 'rating': data['Rated'],
+                'imdb_rating': data.get('imdbRating', 'N/A'),
                 'genre': data['Genre'].split(', '),
                 'cast': cast,
                 'crew': crew
@@ -72,8 +73,58 @@ def search_movies(query):
                 details = fetch_movie_details(movie['imdbID'])
                 if details:
                     results.append(details)
+            # Sort by IMDb rating (highest first)
+            results.sort(key=lambda x: float(x['imdb_rating']) if x['imdb_rating'] != 'N/A' else 0, reverse=True)
             return results
     return []
+
+def search_by_genre(genre):
+    """Search for top-rated movies in a specific genre."""
+    # First, get a batch of movies to filter
+    common_terms = {
+        'action': ['action', 'adventure', 'thriller'],
+        'comedy': ['comedy', 'funny', 'humor'],
+        'drama': ['drama', 'dramatic'],
+        'horror': ['horror', 'scary', 'thriller'],
+        'sci-fi': ['sci-fi', 'science fiction', 'space'],
+        'romance': ['romance', 'romantic', 'love'],
+        'mystery': ['mystery', 'detective', 'crime'],
+        'documentary': ['documentary', 'doc'],
+        'animation': ['animation', 'animated', 'cartoon'],
+        'family': ['family', 'children', 'kids']
+    }
+    
+    search_terms = common_terms.get(genre.lower(), [genre])
+    results = []
+    
+    for term in search_terms:
+        response = requests.get(
+            OMDB_API_URL,
+            params={
+                'apikey': OMDB_API_KEY,
+                's': term,
+                'type': 'movie'
+            }
+        )
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('Response') == 'True':
+                for movie in data['Search'][:10]:  # Get more movies to filter
+                    details = fetch_movie_details(movie['imdbID'])
+                    if details and genre.lower() in [g.lower() for g in details['genre']]:
+                        results.append(details)
+    
+    # Remove duplicates based on movie ID
+    unique_results = {movie['id']: movie for movie in results}.values()
+    
+    # Sort by IMDb rating and get top 5
+    sorted_results = sorted(
+        unique_results,
+        key=lambda x: float(x['imdb_rating']) if x['imdb_rating'] != 'N/A' else 0,
+        reverse=True
+    )[:5]
+    
+    return sorted_results
 
 def search_actor(name):
     """Search for an actor's filmography."""
@@ -96,14 +147,17 @@ def search_actor(name):
                         'title': details['title'],
                         'year': details['year'],
                         'role': 'Actor',
-                        'id': details['id']
+                        'id': details['id'],
+                        'imdb_rating': details['imdb_rating']
                     })
+            # Sort by IMDb rating
+            filmography.sort(key=lambda x: float(x['imdb_rating']) if x['imdb_rating'] != 'N/A' else 0, reverse=True)
             return filmography
     return []
 
 @app.route('/api/v1/movies/search', methods=['GET'])
 def search_endpoint():
-    """Search for movies by title or actor name."""
+    """Search for movies by title, actor name, or genre."""
     query = request.args.get('q', '').strip()
     search_type = request.args.get('type', 'movie').strip().lower()
 
@@ -123,6 +177,13 @@ def search_endpoint():
             return jsonify({
                 "actor": query,
                 "filmography": results
+            })
+    elif search_type == 'genre':
+        results = search_by_genre(query)
+        if results:
+            return jsonify({
+                "genre": query,
+                "movies": results
             })
     else:
         results = search_movies(query)

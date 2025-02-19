@@ -12,12 +12,14 @@ Welcome to the Movie Information Service!
 Commands:
   search <title>     - Search for movies by title
   actor <name>       - Search for an actor's filmography
+  genre <type>       - Search top-rated movies by genre (e.g., action, comedy, drama)
   help               - Show this help message
   quit               - Exit the program
 
 Example:
   search Inception
   actor Tom Hanks
+  genre action
 """
     prompt = 'movies> '
 
@@ -39,6 +41,7 @@ Example:
                 for movie in movies:
                     print(f"\nTitle: {movie['title']} ({movie['year']})")
                     print(f"Rating: {movie['rating']}")
+                    print(f"IMDb Rating: {movie['imdb_rating']}")
                     print(f"Genre: {', '.join(movie['genre'])}")
                     print(f"Released: {movie['released']}")
                     print("\nCast:")
@@ -74,7 +77,49 @@ Example:
                 data = response.json()
                 print(f"\nFilmography for {data['actor']}:")
                 for movie in data['filmography']:
-                    print(f"- {movie['title']} ({movie['year']})")
+                    print(f"- {movie['title']} ({movie['year']}) - IMDb Rating: {movie['imdb_rating']}")
+            else:
+                error = response.json().get('error', {})
+                print(f"\nError: {error.get('message', 'Unknown error')}")
+                if 'details' in error:
+                    print(f"Details: {error['details']}")
+
+        except requests.exceptions.RequestException as e:
+            print(f"\nError connecting to service: {e}")
+            print("Please make sure the service is running (python service.py)")
+
+    def do_genre(self, genre: str) -> None:
+        """Search for top-rated movies in a specific genre."""
+        if not genre:
+            print("Please provide a genre to search for (e.g., action, comedy, drama).")
+            print("\nAvailable genres:")
+            print("- Action")
+            print("- Comedy")
+            print("- Drama")
+            print("- Horror")
+            print("- Sci-Fi")
+            print("- Romance")
+            print("- Mystery")
+            print("- Documentary")
+            print("- Animation")
+            print("- Family")
+            return
+
+        try:
+            response = requests.get(
+                "http://localhost:5000/api/v1/movies/search",
+                params={"q": genre, "type": "genre"},
+                headers={"Accept": "application/json"}
+            )
+
+            if response.status_code == 200:
+                data = response.json()
+                print(f"\nTop {len(data['movies'])} {data['genre'].title()} Movies (by IMDb Rating):")
+                for movie in data['movies']:
+                    print(f"\nTitle: {movie['title']} ({movie['year']})")
+                    print(f"IMDb Rating: {movie['imdb_rating']}")
+                    print(f"Genre: {', '.join(movie['genre'])}")
+                    print(f"Cast: {', '.join(movie['cast'][:3])}")  # Show top 3 cast members
             else:
                 error = response.json().get('error', {})
                 print(f"\nError: {error.get('message', 'Unknown error')}")

@@ -85,6 +85,7 @@ A microservice that provides movie information through HTTP/JSON communication. 
                print(f"\nTitle: {movie['title']} ({movie['year']})")
                print(f"IMDb Rating: {movie['imdb_rating']}")
                print(f"Cast: {', '.join(movie['cast'])}")
+           print(f"\nSearch completed in {result['elapsed_time']} seconds")
    
    def handle_actor_search(name):
        """Get actor's top 5 movies by IMDb rating."""
@@ -93,6 +94,7 @@ A microservice that provides movie information through HTTP/JSON communication. 
            print(f"\n{result['message']}")
            for movie in result['filmography']:
                print(f"- {movie['title']} ({movie['year']}) - IMDb Rating: {movie['imdb_rating']}")
+           print(f"\nSearch completed in {result['elapsed_time']} seconds")
    
    def handle_genre_search(genre):
        """Get top 5 movies in genre from IMDb Top 250."""
@@ -101,6 +103,7 @@ A microservice that provides movie information through HTTP/JSON communication. 
            print(f"\n{result['message']}")
            for movie in result['movies']:
                print(f"- {movie['title']} ({movie['year']}) - IMDb Rating: {movie['imdb_rating']}")
+           print(f"\nSearch completed in {result['elapsed_time']} seconds")
    ```
 
 3. Add to Your CLI's Command Handler:
@@ -126,25 +129,44 @@ A microservice that provides movie information through HTTP/JSON communication. 
            handle_genre_search(genre)
    ```
 
+## Search Capabilities
+
+You can search for ANY movie, actor, or genre:
+
+1. Movie Search:
+   - Returns top 5 matches sorted by IMDb rating
+   - Search any movie title (e.g., "Inception", "Matrix", "Star Wars")
+   - Response time: ~2-3 seconds
+
+2. Actor Search:
+   - Returns actor's top 5 movies by IMDb rating
+   - Search any actor (e.g., "Tom Hanks", "Morgan Freeman", "Emma Stone")
+   - Popular actors return instantly from cache
+   - New searches take ~3-5 seconds
+
+3. Genre Search:
+   - Returns top 5 movies in genre from IMDb Top 250
+   - Search any genre (e.g., "action", "drama", "comedy", "thriller")
+   - Popular genres return instantly from cache
+   - New genres take ~3-5 seconds
+
 ## Example Commands
 
-Your users can now search for any movie, actor, or genre:
-
 ```bash
-# Search any movie (returns top 5 by IMDb rating):
-/movie inception
-/movie dark knight
-/movie matrix
+# Movie Search (returns top 5 by IMDb rating):
+/movie inception        # ~2s: Returns Inception and related movies
+/movie dark knight     # ~2s: Returns The Dark Knight series
+/movie matrix          # ~2s: Returns The Matrix trilogy
 
-# Get any actor's top 5 movies (by IMDb rating):
-/actor tom hanks
-/actor morgan freeman
-/actor leonardo dicaprio
+# Actor Search (returns their top 5 movies):
+/actor tom hanks       # ~4s: Returns Forrest Gump, Saving Private Ryan, etc.
+/actor emma stone      # ~4s: Returns La La Land, Birdman, etc.
+/actor brad pitt       # ~4s: Returns Fight Club, Se7en, etc.
 
-# Get top 5 movies in any genre (from IMDb Top 250):
-/genre action
-/genre sci-fi
-/genre drama
+# Genre Search (returns top 5 from IMDb Top 250):
+/action                # ~1s: Returns from cache (Dark Knight, LOTR, etc.)
+/thriller             # ~4s: Returns Inception, Memento, etc.
+/romance              # ~4s: Returns Casablanca, Eternal Sunshine, etc.
 ```
 
 ## Example Responses
@@ -160,7 +182,8 @@ Your users can now search for any movie, actor, or genre:
         "genre": ["Action", "Adventure", "Sci-Fi"],
         "cast": ["Leonardo DiCaprio", "Joseph Gordon-Levitt", "Ellen Page"],
         "plot": "..."
-    }]
+    }],
+    "elapsed_time": 2.34
 }
 ```
 
@@ -176,7 +199,8 @@ Your users can now search for any movie, actor, or genre:
             "imdb_rating": "8.8",
             "plot": "..."
         }
-    ]
+    ],
+    "elapsed_time": 3.67
 }
 ```
 
@@ -193,7 +217,8 @@ Your users can now search for any movie, actor, or genre:
             "genre": ["Action", "Sci-Fi"],
             "plot": "..."
         }
-    ]
+    ],
+    "elapsed_time": 0.82
 }
 ```
 
@@ -222,8 +247,8 @@ The service returns clear error messages:
 2. Results:
    - All searches return top 5 results
    - Results always sorted by IMDb rating
-   - Genre searches use IMDb Top 250 list
-   - Actor searches return their highest-rated movies
+   - Popular searches return instantly from cache
+   - New searches take a few seconds to fetch data
 
 3. Rate Limits:
    - OMDB API: 1,000 requests per day (free tier)

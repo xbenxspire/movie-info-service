@@ -50,6 +50,7 @@ def main():
             print(f"\nTitle: {movie['title']} ({movie['year']})")
             print(f"IMDb Rating: {movie['imdb_rating']}")
             print(f"Cast: {', '.join(movie['cast'])}")
+        print(f"\nSearch completed in {result['elapsed_time']} seconds")
     
     # Example 2: Get any actor's top movies
     print("\nGetting Russell Crowe's top movies...")
@@ -58,6 +59,7 @@ def main():
         print(f"\n{result['message']}")
         for movie in result['filmography']:
             print(f"- {movie['title']} ({movie['year']}) - IMDb Rating: {movie['imdb_rating']}")
+        print(f"\nSearch completed in {result['elapsed_time']} seconds")
     
     # Example 3: Get top movies in any genre
     print("\nGetting top action movies...")
@@ -66,6 +68,7 @@ def main():
         print(f"\n{result['message']}")
         for movie in result['movies']:
             print(f"- {movie['title']} ({movie['year']}) - IMDb Rating: {movie['imdb_rating']}")
+        print(f"\nSearch completed in {result['elapsed_time']} seconds")
 
 if __name__ == "__main__":
     main()

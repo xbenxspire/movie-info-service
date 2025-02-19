@@ -1,6 +1,7 @@
 import os
 import json
 import time
+from datetime import datetime
 import requests
 from flask import Flask, jsonify, request
 from flask_cors import CORS
@@ -19,7 +20,7 @@ if not OMDB_API_KEY:
 
 OMDB_API_URL = "http://www.omdbapi.com/"
 
-# Known IMDb IDs for top actor movies
+# Known IMDb IDs for top actor movies (instant results)
 TOP_ACTOR_MOVIES = {
     "ethan hawke": [
         "tt0245712",  # Training Day (7.7)
@@ -37,7 +38,7 @@ TOP_ACTOR_MOVIES = {
     ]
 }
 
-# IMDb Top 250 Movie IDs by Genre
+# IMDb Top 250 Movie IDs by Genre (instant results)
 TOP_GENRE_MOVIES = {
     "action": [
         "tt0468569",  # The Dark Knight (9.0)
@@ -121,6 +122,7 @@ def fetch_movie_details(movie_id):
 
 def search_movies(query):
     """Search movies by title."""
+    start_time = time.time()
     print(f"Searching for movies matching: {query}")
     response = requests.get(
         OMDB_API_URL,
@@ -140,11 +142,14 @@ def search_movies(query):
                     results.append(details)
             # Sort by IMDb rating (highest first)
             results.sort(key=lambda x: float(x['imdb_rating']), reverse=True)
-            return results[:5]  # Return top 5
-    return []
+            results = results[:5]  # Return top 5
+            elapsed_time = round(time.time() - start_time, 2)
+            return results, elapsed_time
+    return [], 0
 
 def search_actor_filmography(name):
     """Search for an actor's top movies."""
+    start_time = time.time()
     print(f"Searching for {name}'s filmography")
     name_lower = name.lower()
     
@@ -165,7 +170,8 @@ def search_actor_filmography(name):
                 })
         # Sort by IMDb rating (highest first)
         results.sort(key=lambda x: float(x['imdb_rating']), reverse=True)
-        return results
+        elapsed_time = round(time.time() - start_time, 2)
+        return results, elapsed_time
     
     # Otherwise search OMDB API
     response = requests.get(
@@ -195,11 +201,14 @@ def search_actor_filmography(name):
                         })
             # Sort by IMDb rating and get top 5
             all_movies.sort(key=lambda x: float(x['imdb_rating']), reverse=True)
-            return all_movies[:5]
-    return []
+            results = all_movies[:5]
+            elapsed_time = round(time.time() - start_time, 2)
+            return results, elapsed_time
+    return [], 0
 
 def search_by_genre(genre):
     """Search for top-rated movies in a specific genre."""
+    start_time = time.time()
     print(f"Searching for top {genre} movies")
     genre_lower = genre.lower()
     
@@ -212,7 +221,8 @@ def search_by_genre(genre):
                 results.append(details)
         # Sort by IMDb rating (highest first)
         results.sort(key=lambda x: float(x['imdb_rating']), reverse=True)
-        return results
+        elapsed_time = round(time.time() - start_time, 2)
+        return results, elapsed_time
     
     # Fallback to search if genre not in TOP_GENRE_MOVIES
     response = requests.get(
@@ -234,8 +244,10 @@ def search_by_genre(genre):
             
             # Sort by IMDb rating and get top 5
             results.sort(key=lambda x: float(x['imdb_rating']), reverse=True)
-            return results[:5]
-    return []
+            results = results[:5]
+            elapsed_time = round(time.time() - start_time, 2)
+            return results, elapsed_time
+    return [], 0
 
 @app.route('/api/v1/movies/search', methods=['GET'])
 def search_endpoint():
@@ -254,27 +266,30 @@ def search_endpoint():
         }), 400
     
     if search_type == 'actor':
-        results = search_actor_filmography(query)
+        results, elapsed_time = search_actor_filmography(query)
         if results:
             return jsonify({
                 "actor": query,
                 "message": f"Top {len(results)} highest-rated movies starring {query}:",
-                "filmography": results
+                "filmography": results,
+                "elapsed_time": elapsed_time
             })
     elif search_type == 'genre':
-        results = search_by_genre(query)
+        results, elapsed_time = search_by_genre(query)
         if results:
             return jsonify({
                 "genre": query,
                 "message": f"Top {len(results)} highest-rated {query} movies:",
-                "movies": results
+                "movies": results,
+                "elapsed_time": elapsed_time
             })
     else:
-        results = search_movies(query)
+        results, elapsed_time = search_movies(query)
         if results:
             return jsonify({
                 "message": f"Found {len(results)} movies matching '{query}' (sorted by IMDb rating):",
-                "movies": results
+                "movies": results,
+                "elapsed_time": elapsed_time
             })
 
     return jsonify({

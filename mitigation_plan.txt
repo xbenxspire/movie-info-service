@@ -1,0 +1,77 @@
+MOVIE INFORMATION MICROSERVICE - MITIGATION PLAN
+
+1. TEAMMATE INFORMATION
+   - Implementing Microservice A for: Vincent
+   - Current Status: Fully implemented and operational
+   - All features working as specified:
+     * Movie title search
+     * Actor filmography search
+     * Genre-based search
+     * All results sorted by IMDb rating
+     * No caching - fresh data every time
+
+2. MICROSERVICE ACCESS
+   - GitHub Repository: https://github.com/xbenxspire/movie-info-service
+   - Local Installation Required:
+     1. Clone repository
+     2. Install Python dependencies
+     3. Get OMDB API key
+     4. Create .env file
+     5. Run microservice locally
+
+3. TROUBLESHOOTING GUIDE
+   If unable to access/call the microservice:
+   
+   a) First Steps:
+      - Verify microservice is running (python microservice.py)
+      - Check OMDB API key in .env file
+      - Test health endpoint: GET http://localhost:5000/health
+   
+   b) Common Issues:
+      - Port 5000 already in use -> Kill process or use different port
+      - OMDB API key invalid -> Get new key from omdbapi.com
+      - Dependencies missing -> Run pip install -r requirements.txt
+   
+   c) Contact Information:
+      - Teams: Available 7 PM - 11 PM PST weekdays
+      - Response time: Within 24 hours
+      - Emergency contact: Through Teams urgent message
+
+4. NOTIFICATION DEADLINE
+   - Report any issues by: February 25th, 2025
+   - This deadline ensures:
+     * Time to resolve issues
+     * No impact on Sprint 3
+     * Smooth integration
+
+5. BACKUP PLANS
+   a) If OMDB API is down:
+      - Service will return clear error message
+      - Retry with exponential backoff
+      - Contact me for status update
+   
+   b) If local installation fails:
+      - I can provide Docker container
+      - Can help debug via screen share
+      - Can provide test data for development
+   
+   c) If integration issues:
+      - Can modify API response format
+      - Can add new endpoints if needed
+      - Can provide sample integration code
+
+6. ASSUMPTIONS & REQUIREMENTS
+   - Python 3.6+ installed
+   - Requests library available
+   - Internet access for OMDB API
+   - Port 5000 available
+   - OMDB API key (free tier sufficient)
+
+7. MONITORING & SUPPORT
+   - Health endpoint available
+   - Error logging implemented
+   - Clear error messages
+   - Quick response to issues
+   - Regular repository updates
+
+Remember: Early communication about issues is key to successful integration!

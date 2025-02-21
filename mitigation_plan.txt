@@ -3,11 +3,10 @@ MOVIE INFORMATION MICROSERVICE - MITIGATION PLAN
 1. TEAMMATE INFORMATION
    - Implementing Microservice A for: Vincent
    - Current Status: Fully implemented and operational
-   - All features working as specified:
+   - Features:
      * Movie title search
-     * Actor filmography search
-     * Genre-based search
-     * All results sorted by IMDb rating
+     * Results sorted by IMDb rating
+     * Full movie details (cast, plot, etc.)
      * No caching - fresh data every time
 
 2. MICROSERVICE ACCESS
@@ -73,5 +72,14 @@ MOVIE INFORMATION MICROSERVICE - MITIGATION PLAN
    - Clear error messages
    - Quick response to issues
    - Regular repository updates
+
+8. API LIMITATIONS
+   - OMDB API only supports:
+     * Movie title search
+     * IMDb ID lookup
+     * Basic movie metadata
+   - No direct actor/genre search
+   - Free tier: 1,000 requests/day
+   - Response time: 2-3 seconds
 
 Remember: Early communication about issues is key to successful integration!

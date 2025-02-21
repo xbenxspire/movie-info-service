@@ -18,27 +18,27 @@ def test_movie_service():
     print("communicate through HTTP/JSON, not direct calls.")
     print("The services are completely independent.\n")
     
-    # Test 1: Search by movie title
-    print("\nTest 1: Movie Search")
-    print("-----------------")
-    print("Sending HTTP GET request for 'Harry Potter'...")
-    test_search("Harry Potter", "movie")
+    # Test successful movie search
+    print("\nTest 1: Successful Movie Search")
+    print("-----------------------------")
+    print("Sending HTTP GET request for 'The Dark Knight'...")
+    test_search("The Dark Knight")
     time.sleep(1)  # Pause between tests
     
-    # Test 2: Search by actor name
-    print("\nTest 2: Actor Search")
-    print("-----------------")
-    print("Sending HTTP GET request for 'Tom Hanks'...")  # Changed to Tom Hanks
-    test_search("Tom Hanks", "actor")
+    # Test movie not found
+    print("\nTest 2: Movie Not Found")
+    print("--------------------")
+    print("Sending HTTP GET request for 'NonexistentMovie123'...")
+    test_search("NonexistentMovie123")
     time.sleep(1)  # Pause between tests
     
-    # Test 3: Search by genre
-    print("\nTest 3: Genre Search")
-    print("-----------------")
-    print("Sending HTTP GET request for 'action'...")  # Changed to action
-    test_search("action", "genre")
+    # Test empty search
+    print("\nTest 3: Empty Search")
+    print("----------------")
+    print("Sending HTTP GET request with empty query...")
+    test_search("")
 
-def test_search(query, search_type):
+def test_search(query):
     """
     Test the movie service search endpoint.
     
@@ -49,19 +49,15 @@ def test_search(query, search_type):
     4. This program parses the JSON response
     
     Args:
-        query (str): Search term (movie title, actor name, or genre)
-        search_type (str): Type of search - "movie", "actor", or "genre"
+        query (str): Movie title to search for
     """
     try:
         # Step 1: Construct HTTP request
         url = "http://localhost:5000/api/v1/movies/search"
-        params = {
-            "q": query,
-            "type": search_type
-        }
+        params = {"q": query}
         
         # Step 2: Send HTTP GET request to microservice
-        print(f"GET {url}?q={query}&type={search_type}")
+        print(f"GET {url}?q={query}")
         response = requests.get(url, params=params)
         
         # Step 3: Process JSON response
@@ -73,23 +69,14 @@ def test_search(query, search_type):
             # Parse JSON response
             data = response.json()
             
-            # Display results based on search type
-            if search_type == "movie":
-                print("\nMovie Results:")
-                for movie in data.get('movies', []):
-                    print(f"\nTitle: {movie['title']} ({movie['year']})")
-                    print(f"IMDb Rating: {movie['imdb_rating']}")
-                    print(f"Cast: {', '.join(movie['cast'])}")
-            
-            elif search_type == "actor":
-                print("\nActor Filmography:")
-                for movie in data.get('filmography', []):
-                    print(f"- {movie['title']} ({movie['year']}) - IMDb Rating: {movie['imdb_rating']}")
-            
-            elif search_type == "genre":
-                print(f"\nTop {data['genre']} Movies:")
-                for movie in data.get('movies', []):
-                    print(f"- {movie['title']} ({movie['year']}) - IMDb Rating: {movie['imdb_rating']}")
+            # Display movie results
+            print("\nMovie Results:")
+            for movie in data.get('movies', []):
+                print(f"\nTitle: {movie['title']} ({movie['year']})")
+                print(f"IMDb Rating: {movie['imdb_rating']}")
+                print(f"Cast: {', '.join(movie['cast'])}")
+                print(f"Genre: {', '.join(movie['genre'])}")
+                print(f"Plot: {movie['plot']}")
             
             print(f"\nRequest completed in {data.get('elapsed_time', 0)} seconds")
         

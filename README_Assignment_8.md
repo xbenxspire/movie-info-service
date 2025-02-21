@@ -3,7 +3,7 @@
 ## Communication Contract
 
 ### How to Request Data
-The microservice provides a RESTful API endpoint that accepts HTTP GET requests. Here's how to request data:
+The microservice provides a RESTful API endpoint that accepts HTTP GET requests for movie title searches:
 
 ```python
 import requests
@@ -11,22 +11,9 @@ import requests
 # Base URL for the microservice
 BASE_URL = "http://localhost:5000/api/v1/movies/search"
 
-# Example 1: Search by movie title
+# Search by movie title
 response = requests.get(BASE_URL, params={
-    "q": "Inception",
-    "type": "movie"
-})
-
-# Example 2: Search by actor name
-response = requests.get(BASE_URL, params={
-    "q": "Tom Hanks",
-    "type": "actor"
-})
-
-# Example 3: Search by genre
-response = requests.get(BASE_URL, params={
-    "q": "action",
-    "type": "genre"
+    "q": "Inception"  # Movie title to search for
 })
 ```
 
@@ -38,22 +25,13 @@ The microservice returns data in JSON format. Here's how to handle the responses
 if response.status_code == 200:
     data = response.json()
     
-    # For movie search
-    if 'movies' in data:
-        for movie in data['movies']:
-            print(f"Title: {movie['title']} ({movie['year']})")
-            print(f"IMDb Rating: {movie['imdb_rating']}")
-            print(f"Cast: {', '.join(movie['cast'])}")
-    
-    # For actor search
-    elif 'filmography' in data:
-        for movie in data['filmography']:
-            print(f"- {movie['title']} ({movie['year']}) - IMDb Rating: {movie['imdb_rating']}")
-    
-    # For genre search
-    elif 'genre' in data:
-        for movie in data['movies']:
-            print(f"- {movie['title']} ({movie['year']}) - IMDb Rating: {movie['imdb_rating']}")
+    # Process movie results
+    for movie in data.get('movies', []):
+        print(f"Title: {movie['title']} ({movie['year']})")
+        print(f"IMDb Rating: {movie['imdb_rating']}")
+        print(f"Cast: {', '.join(movie['cast'])}")
+        print(f"Genre: {', '.join(movie['genre'])}")
+        print(f"Plot: {movie['plot']}")
             
 else:
     # Handle error response
@@ -65,18 +43,41 @@ else:
 ![Sequence Diagram](sequence-diagram.png)
 
 The sequence diagram shows:
-1. Your program makes HTTP GET request to the microservice
+1. Your program makes HTTP GET request with movie title
 2. Microservice processes request and calls OMDB API
 3. OMDB API returns movie data
-4. Microservice processes and sorts results
+4. Microservice sorts results by IMDb rating
 5. Microservice returns JSON response to your program
+
+## Implementation Details & Limitations
+
+### Design Philosophy
+- Follows microservice principles with stateless design
+- No local caching or stored data - fetches fresh data for every request
+- All results sorted by IMDb rating
+- Returns up to 5 movies per search
+
+### OMDB API Limitations
+
+The OMDB API provides limited search capabilities:
+- Can only search by movie title or IMDb ID
+- No direct actor filmography search
+- No direct genre-based search
+- No built-in sorting by IMDb rating
+
+Therefore, this microservice:
+1. Focuses on movie title search only
+2. Uses OMDB's search endpoint to find movies
+3. Fetches full details for each movie
+4. Sorts results by IMDb rating
+5. Returns top 5 matches
 
 ## Mitigation Plan
 
 1. **Teammate Information**
    - Implementing Microservice A for: Vincent
    - Current Status: Fully implemented and operational
-   - Problems: No problems - all features working as specified
+   - Features: Movie title search with IMDb rating sorting
 
 2. **Access Instructions**
    - Code available on GitHub: https://github.com/xbenxspire/movie-info-service

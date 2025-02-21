@@ -1,0 +1,30 @@
+{
+  "actor": "Ethan Hawke",
+  "message": "Top 3 highest-rated movies starring Ethan Hawke:",
+  "filmography": [
+    {
+      "title": "Premio Donostia a Ethan Hawke",
+      "year": 2016,
+      "role": "Actor",
+      "id": "tt6091492",
+      "imdb_rating": "N/A",
+      "plot": "N/A"
+    },
+    {
+      "title": "Montclair Film Festival: A Conversation with Ethan Hawke",
+      "year": 2018,
+      "role": "Actor",
+      "id": "tt33350857",
+      "imdb_rating": "N/A",
+      "plot": "The Storyteller Series at Montclair Film Festival presents A Conversation with Ethan Hawke, moderated by Stephen Colbert in 2018."
+    },
+    {
+      "title": "Intro to Method Acting with Vincent DOnofrio, Ethan Hawke, and Isaac Butler",
+      "year": 2023,
+      "role": "Actor",
+      "id": "tt34738120",
+      "imdb_rating": "N/A",
+      "plot": "N/A"
+    }
+  ]
+}

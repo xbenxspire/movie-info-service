@@ -238,5 +238,5 @@ Common error codes:
 For issues or questions:
 1. Check service is running (`python microservice.py`)
 2. Verify OMDB API key in .env file
-3. Contact via GitHub issues
+3. Contact via Discord
 4. Available: 7 PM - 11 PM PST weekdays

@@ -194,6 +194,16 @@ The service returns JSON responses in the following format:
 }
 ```
 
+## UML Sequence Diagram
+
+![Sequence Diagram](UML%20Sequnce%20Diagram.png)
+
+This sequence diagram shows how the microservice:
+1. Receives movie search requests from client programs
+2. Validates queries and handles errors
+3. Fetches and sorts movie data from OMDB API
+4. Returns formatted JSON responses with elapsed time
+
 ## Features
 
 1. Movie Title Search:

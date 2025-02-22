@@ -40,7 +40,7 @@ else:
 ```
 
 ## UML Sequence Diagram
-![Sequence Diagram](UML%20Sequnce%20Diagram.png)
+![Sequence Diagram](UML_Sequence_Diagram.png)
 
 The sequence diagram illustrates the complete flow of a movie search request:
 

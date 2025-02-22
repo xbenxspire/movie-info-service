@@ -196,7 +196,7 @@ The service returns JSON responses in the following format:
 
 ## UML Sequence Diagram
 
-![Sequence Diagram](UML%20Sequnce%20Diagram.png)
+![Sequence Diagram](UML_Sequence_Diagram.png)
 
 This sequence diagram shows how the microservice:
 1. Receives movie search requests from client programs
